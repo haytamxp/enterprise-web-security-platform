@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/incident.schema.json",
+  "title": "Security Incident",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "incident_id",
+    "title",
+    "status",
+    "severity",
+    "confidence",
+    "asset_ids",
+    "created_at",
+    "source_event_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "incident_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "tenant_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 10000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "triage",
+        "investigating",
+        "contained",
+        "mitigating",
+        "resolved",
+        "closed",
+        "false_positive"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "asset_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "source_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "related_finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "assigned_team": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "assigned_to": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "playbook_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "audit_ref": {
+      "type": "string",
+      "maxLength": 512
+    }
+  }
+}

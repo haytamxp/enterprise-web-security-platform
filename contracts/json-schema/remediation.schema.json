@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/remediation.schema.json",
+  "title": "Remediation Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "remediation_id",
+    "target_type",
+    "target_id",
+    "status",
+    "owner_team",
+    "created_at",
+    "acceptance_criteria"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "remediation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "tenant_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "finding",
+        "incident"
+      ]
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "assigned",
+        "in_progress",
+        "fixed_pending_validation",
+        "validated",
+        "rejected",
+        "risk_accepted",
+        "cancelled"
+      ]
+    },
+    "owner_team": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "owner_user": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "due_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "recommendation": {
+      "type": "string",
+      "maxLength": 10000
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    },
+    "validation_evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 512
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "validated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  }
+}

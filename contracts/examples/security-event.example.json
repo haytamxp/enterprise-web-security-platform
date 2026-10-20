@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "event_id": "evt-demo-001",
+  "timestamp": "2026-10-20T10:00:00Z",
+  "observed_at": "2026-10-20T10:00:02Z",
+  "tenant_id": "tenant-demo",
+  "source_product": "suricata",
+  "source_event_id": "eve-demo-001",
+  "event_type": "alert",
+  "asset_id": "asset-web-001",
+  "severity": 7,
+  "severity_label": "high",
+  "confidence": 0.92,
+  "src_ip": "192.0.2.25",
+  "dest_ip": "198.51.100.20",
+  "protocol": "TCP",
+  "rule_id": "demo-rule-001",
+  "rule_name": "Synthetic suspicious HTTP pattern",
+  "correlation_id": "corr-demo-001",
+  "deduplication_key": "suricata:evt-demo-001",
+  "raw_event_ref": "eventstore://demo/evt-demo-001",
+  "attributes": {
+    "http_method": "GET",
+    "environment": "staging"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "action_request_id": "action-demo-001",
+  "tenant_id": "tenant-demo",
+  "action_type": "run_playbook",
+  "status": "awaiting_approval",
+  "requested_by": "analyst-demo",
+  "scope_asset_ids": [
+    "asset-web-001"
+  ],
+  "reason": "Synthetic request used for schema validation; do not execute.",
+  "idempotency_key": "demo-action-001-key",
+  "dry_run": true,
+  "approvals": [],
+  "requested_parameters": {
+    "playbook_id": "triage-web-anomaly-v1"
+  },
+  "result_summary": "No action executed.",
+  "audit_ref": "audit://demo/action-demo-001",
+  "created_at": "2026-10-20T10:20:00Z",
+  "updated_at": "2026-10-20T10:20:00Z"
+}

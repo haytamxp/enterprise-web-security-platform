@@ -1,0 +1,33 @@
+name: Rapport de bug
+description: Signaler un défaut reproductible de la plateforme (sans détails de vulnérabilité sensibles).
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Ne publiez aucun secret, donnée client ou détail exploitable d'une vulnérabilité. Pour un signalement de sécurité, suivez SECURITY.md."
+  - type: textarea
+    id: summary
+    attributes:
+      label: Résumé
+      description: Comportement observé et comportement attendu.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes de reproduction
+      description: Utilisez uniquement un environnement de test autorisé et des données fictives.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit / version
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Journaux expurgés
+      description: Retirez les tokens, identifiants personnels et informations d'infrastructure sensibles.

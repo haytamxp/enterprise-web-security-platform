@@ -1,0 +1,61 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+secrets/
+
+# Private data / real evidence: never commit these
+local-data/
+evidence/private/
+reports/generated/
+*.pcap
+*.pcapng
+*.har
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs and temporary output
+*.log
+logs/
+tmp/
+temp/
+coverage/
+
+# Go
+/bin/
+/vendor/
+*.test
+coverage.out
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.npm/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local containers / generated artefacts
+*.tar
+*.tar.gz
+*.zip

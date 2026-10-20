@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/action-request.schema.json",
+  "title": "Controlled Security Action Request",
+  "description": "A request for an action; a valid payload does not authorize or execute the action.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "action_request_id",
+    "action_type",
+    "status",
+    "requested_by",
+    "scope_asset_ids",
+    "reason",
+    "idempotency_key",
+    "dry_run",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "action_request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "tenant_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "block_ip",
+        "isolate_host",
+        "disable_account",
+        "run_playbook",
+        "other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "awaiting_approval",
+        "approved",
+        "rejected",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "requested_by": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "scope_asset_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 256
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "approver",
+          "decision",
+          "timestamp"
+        ],
+        "properties": {
+          "approver": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    },
+    "requested_parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "result_summary": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "audit_ref": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

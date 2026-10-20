@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/finding.schema.json",
+  "title": "Security Finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "finding_id",
+    "asset_id",
+    "source",
+    "title",
+    "status",
+    "severity",
+    "confidence",
+    "detected_at",
+    "evidence_refs"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "finding_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "asset_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "p1_offensive",
+        "p4_assurance",
+        "manual",
+        "scanner",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 10000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "detected",
+        "triaged",
+        "confirmed",
+        "false_positive",
+        "remediating",
+        "fixed_pending_retest",
+        "retest_passed",
+        "accepted_risk",
+        "closed"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info",
+        "unknown"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "cvss": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "score"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "4.0"
+          ]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "vector": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "cwe_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CWE-[0-9]+$"
+      },
+      "uniqueItems": true
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "uniqueItems": true
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence_id",
+          "classification",
+          "redacted"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          },
+          "redacted": {
+            "type": "boolean"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "storage_ref": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "remediation_guidance": {
+      "type": "string",
+      "maxLength": 10000
+    },
+    "detected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deduplication_key": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "references_to_incidents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

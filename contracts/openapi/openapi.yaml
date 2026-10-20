@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Enterprise Web Security & Threat Response Platform API
+  version: 1.0.0
+  description: |
+    Contrat initial proposé. Les routes décrivent l'API cible et ne signifient pas
+    qu'un backend opérationnel est déjà implémenté.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Développement local uniquement
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Vérifier la disponibilité de l'API
+      security: []
+      responses:
+        '200':
+          description: API disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /api/v1/assets:
+    get:
+      operationId: listAssets
+      summary: Lister les actifs autorisés par le contexte utilisateur
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+      responses:
+        '200':
+          description: Page d'actifs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '../json-schema/asset.schema.json' }
+                  next_cursor:
+                    type: [string, 'null']
+        '401': { description: Authentification requise }
+        '403': { description: Permission insuffisante }
+  /api/v1/findings:
+    post:
+      operationId: ingestFinding
+      summary: Soumettre un finding normalisé
+      description: Le serveur doit recalculer ou vérifier les champs sensibles et l'appartenance de l'actif au tenant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '../json-schema/finding.schema.json' }
+      responses:
+        '202': { description: Finding accepté pour traitement }
+        '400': { description: Payload invalide }
+        '401': { description: Authentification requise }
+        '403': { description: Autorisation refusée }
+        '409': { description: Conflit d'idempotence ou de version }
+  /api/v1/events:
+    post:
+      operationId: ingestSecurityEvent
+      summary: Ingérer un événement de sécurité normalisé
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '../json-schema/security-event.schema.json' }
+      responses:
+        '202': { description: Événement accepté }
+        '400': { description: Payload invalide }
+        '401': { description: Authentification requise }
+        '403': { description: Autorisation refusée }
+  /api/v1/incidents/{incidentId}:
+    get:
+      operationId: getIncident
+      summary: Lire un incident dans le périmètre autorisé
+      parameters:
+        - in: path
+          name: incidentId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Incident trouvé
+          content:
+            application/json:
+              schema: { $ref: '../json-schema/incident.schema.json' }
+        '401': { description: Authentification requise }
+        '403': { description: Autorisation refusée }
+        '404': { description: Incident introuvable }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

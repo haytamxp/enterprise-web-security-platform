@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "finding_id": "finding-demo-001",
+  "asset_id": "asset-web-001",
+  "tenant_id": "tenant-demo",
+  "source": "p1_offensive",
+  "title": "Missing object-level authorization check (illustrative)",
+  "description": "Synthetic example only; not a real vulnerability report.",
+  "status": "confirmed",
+  "severity": "high",
+  "confidence": 0.98,
+  "cvss": {
+    "version": "4.0",
+    "score": 8.1,
+    "vector": null
+  },
+  "cwe_ids": [
+    "CWE-862"
+  ],
+  "references": [
+    "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+  ],
+  "evidence_refs": [
+    {
+      "evidence_id": "evidence-demo-001",
+      "classification": "internal",
+      "redacted": true,
+      "storage_ref": "evidence://demo/redacted-001",
+      "media_type": "text/plain"
+    }
+  ],
+  "remediation_guidance": "Enforce object-level authorization on every request and add regression tests.",
+  "detected_at": "2026-10-20T10:00:00Z",
+  "last_observed_at": "2026-10-20T10:00:00Z",
+  "deduplication_key": "demo:asset-web-001:bola"
+}

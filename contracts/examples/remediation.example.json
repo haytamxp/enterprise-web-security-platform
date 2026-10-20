@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "remediation_id": "rem-demo-001",
+  "tenant_id": "tenant-demo",
+  "target_type": "finding",
+  "target_id": "finding-demo-001",
+  "status": "assigned",
+  "owner_team": "team-p3",
+  "owner_user": "developer-demo",
+  "due_at": "2026-10-27T17:00:00Z",
+  "recommendation": "Add server-side object-level authorization and regression coverage.",
+  "acceptance_criteria": [
+    "Unauthorized cross-user object access is denied",
+    "Regression tests cover owner and non-owner paths",
+    "P1 retest confirms the issue is resolved"
+  ],
+  "validation_evidence_refs": [],
+  "created_at": "2026-10-20T10:15:00Z",
+  "updated_at": "2026-10-20T10:15:00Z",
+  "validated_at": null
+}

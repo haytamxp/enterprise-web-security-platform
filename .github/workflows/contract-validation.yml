@@ -1,0 +1,26 @@
+name: Contract validation
+
+on:
+  push:
+    branches: [main, "feature/**", "fix/**", "docs/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-contracts:
+    name: validate-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install development dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Validate JSON Schemas and example payloads
+        run: python scripts/validate_contracts.py

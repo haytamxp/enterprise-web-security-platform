@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/security-event.schema.json",
+  "title": "Normalized Security Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "timestamp",
+    "source_product",
+    "event_type",
+    "asset_id",
+    "severity",
+    "confidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tenant_id": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "source_product": {
+      "type": "string",
+      "enum": [
+        "wazuh",
+        "suricata",
+        "application",
+        "assessment",
+        "platform",
+        "unknown"
+      ]
+    },
+    "source_event_id": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "asset_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "severity_label": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info",
+        "unknown"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "src_ip": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "ipv4"
+        },
+        {
+          "type": "string",
+          "format": "ipv6"
+        }
+      ]
+    },
+    "dest_ip": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "ipv4"
+        },
+        {
+          "type": "string",
+          "format": "ipv6"
+        }
+      ]
+    },
+    "protocol": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "rule_id": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "rule_name": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "correlation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "deduplication_key": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "raw_event_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 512
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean",
+          "null"
+        ]
+      }
+    }
+  }
+}

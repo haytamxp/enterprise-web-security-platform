@@ -1,0 +1,22 @@
+name: Proposition de fonctionnalité
+description: Proposer une amélioration de la plateforme.
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème ou besoin
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solution proposée
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Conséquences de sécurité
+      description: Permissions, données, tenants, disponibilité et audit.

@@ -27,3 +27,6 @@ The policy does not start scans, authenticate users, resolve DNS, police
 redirects, or apply network egress restrictions. Those controls must be
 implemented at integration and execution boundaries before active scanning
 is enabled. See `docs/security/scan-scope-policy.md`.
+## P4-04 — Controlled scan orchestration
+
+`scan_orchestrator.py` adds tenant-scoped scan-job admission, idempotency, scheduling/execution rate limits, execution-window checks, current-scope revalidation, short-lived worker leases, retry bounds, completion transitions, and audit events. The default profile allowlist is `passive` and `web_baseline`; this module contains no network client and starts no scan. See `docs/security/scan-orchestration.md` for deployment limitations and the worker integration boundary.

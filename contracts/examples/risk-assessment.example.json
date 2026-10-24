@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "assessment_id": "risk-demo-a01-001",
+  "finding_id": "finding-demo-001",
+  "source_status": "confirmed",
+  "assessed_at": "2026-10-24T12:00:00Z",
+  "source_confidence": 0.98,
+  "classification": "potential_vulnerability",
+  "evidence_quality": "hash_present_unverified",
+  "owasp": {
+    "taxonomy_version": "2025",
+    "category_id": "A01:2025",
+    "category_name": "Broken Access Control",
+    "mapping_method": "cwe_rule",
+    "matched_cwe_ids": ["CWE-862"],
+    "unmapped_cwe_ids": [],
+    "candidate_category_ids": ["A01:2025"]
+  },
+  "severity": {
+    "value": "high",
+    "basis": "cvss_v4_0",
+    "source_reported": "high",
+    "cvss_v4_score": 8.1,
+    "conflict": false
+  },
+  "priority": "P2",
+  "priority_basis": "high_severity_contextual",
+  "context": {
+    "internet_exposed": true,
+    "known_exploited": false,
+    "asset_criticality": "high",
+    "sensitive_data": true
+  },
+  "needs_analyst_review": true,
+  "review_reasons": ["evidence_hash_not_verified", "finding_not_evidence_confirmed"],
+  "rationale": "Evidence references or CWE identifiers exist, but this helper does not independently verify the evidence bytes or establish that the finding is true. OWASP Top 10:2025 category A01:2025 (Broken Access Control) was mapped from CWE-862. Severity high was mapped from the supplied CVSS v4.0 score 8.1; no score was calculated. Priority P2 follows the explicit rule high_severity_contextual."
+}

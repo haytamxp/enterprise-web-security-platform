@@ -30,3 +30,7 @@ is enabled. See `docs/security/scan-scope-policy.md`.
 ## P4-04 — Controlled scan orchestration
 
 `scan_orchestrator.py` adds tenant-scoped scan-job admission, idempotency, scheduling/execution rate limits, execution-window checks, current-scope revalidation, short-lived worker leases, retry bounds, completion transitions, and audit events. The default profile allowlist is `passive` and `web_baseline`; this module contains no network client and starts no scan. See `docs/security/scan-orchestration.md` for deployment limitations and the worker integration boundary.
+
+## P4-05 — Evidence-Based OWASP Risk Classification
+
+`risk_classifier.py` produces an explainable triage assessment from an existing finding: curated CWE-to-OWASP Top 10:2025 mapping, evidence-aware source-status classification, CVSS v4.0 qualitative severity mapping when a score is supplied, priority rules, and analyst-review reasons. It never calculates CVSS. Evidence hashes are not verified by this module; see `docs/security/risk-classification.md` for rules and limitations.

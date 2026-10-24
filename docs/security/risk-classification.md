@@ -8,7 +8,7 @@ Produce a deterministic and explainable triage assessment from an existing WebSh
 
 1. A finding that conforms to the shared finding schema is passed to `classify_finding`.
 2. Exact CWE identifiers are looked up in a curated OWASP Top 10:2025 mapping table. The classifier does not guess categories from titles or descriptions.
-3. Evidence references and SHA-256-shaped metadata are examined. A source status of `confirmed` plus supplied hash metadata is preserved as `confirmed_vulnerability`; however, this helper cannot load evidence bytes or verify that a digest matches them. It emits `evidence_hash_not_verified` and requests analyst review.
+3. Evidence references and SHA-256-shaped metadata are examined. Because this helper cannot load evidence bytes or verify a digest against them, a source status of `confirmed` does not produce `confirmed_vulnerability` here. Such a finding remains `potential_vulnerability`, emits `evidence_hash_not_verified`, and requires analyst review.
 4. A supplied CVSS v4.0 score is mapped to a qualitative severity band. No score is calculated. If CVSS is missing, the source-reported severity is preserved.
 5. Rule-based P1–P4 priority is assigned only to active vulnerability classifications. Missing or ambiguous mapping, weak evidence, severity conflicts, and incomplete context create review reasons.
 
@@ -41,7 +41,7 @@ If the score-derived severity differs from the source-reported severity, the res
 
 ## Priority rules
 
-- `P1`: a known-exploited context is explicitly true for a high/critical finding, or a confirmed critical vulnerability is explicitly internet-exposed.
+- `P1`: `known_exploited` is explicitly true for a high/critical finding. The current helper does not emit `confirmed_vulnerability`; critical internet-exposed findings can only be reconsidered for this additional P1 condition after a trusted evidence-verification integration is implemented and the analyst confirms the finding.
 - `P2`: critical severity, or high severity with at least one explicit contextual indicator (internet exposure, critical/high asset criticality, or sensitive data).
 - `P3`: high/medium severity when the P1/P2 rules do not apply.
 - `P4`: low/info severity.

@@ -293,5 +293,80 @@ class ScanOrchestratorTests(unittest.TestCase):
         self.assertEqual("job_not_found", ctx.exception.code)
 
 
+    def test_completion_audit_failure_keeps_job_running(self):
+        h = Harness()
+        job = h.submit()
+        permit = h.service.claim_for_execution(
+            WORKER, job_id=job.job_id, now=NOW
+        )
+
+        h.audit = lambda _event: (_ for _ in ()).throw(
+            RuntimeError("audit unavailable")
+        )
+
+        with self.assertRaises(ScanOrchestrationError) as ctx:
+            h.service.finish_job(
+                WORKER,
+                job_id=job.job_id,
+                lease_id=permit.lease_id,
+                succeeded=True,
+                now=NOW + timedelta(seconds=5),
+            )
+
+        self.assertEqual("audit_unavailable", ctx.exception.code)
+        current = h.jobs.get(job.job_id)
+        self.assertEqual("running", current.status)
+        self.assertEqual(permit.lease_id, current.lease_id)
+
+    def test_cross_tenant_worker_cannot_complete_job(self):
+        h = Harness()
+        job = h.submit()
+        permit = h.service.claim_for_execution(
+            WORKER, job_id=job.job_id, now=NOW
+        )
+        other_worker = ScanPrincipal(
+            "worker-other",
+            "tenant-other",
+            frozenset({"scan:execute"}),
+        )
+
+        with self.assertRaises(ScanOrchestrationError) as ctx:
+            h.service.finish_job(
+                other_worker,
+                job_id=job.job_id,
+                lease_id=permit.lease_id,
+                succeeded=True,
+                now=NOW + timedelta(seconds=5),
+            )
+
+        self.assertEqual("job_not_found", ctx.exception.code)
+        current = h.jobs.get(job.job_id)
+        self.assertEqual("running", current.status)
+        self.assertEqual(permit.lease_id, current.lease_id)
+
+    def test_audit_events_omit_target_url_across_lifecycle(self):
+        h = Harness()
+        target = (
+            "https://staging.example.com/products"
+            "?token=p4-06-synthetic-secret-marker"
+        )
+
+        job = h.submit(target=target)
+        permit = h.service.claim_for_execution(
+            WORKER, job_id=job.job_id, now=NOW
+        )
+        h.service.finish_job(
+            WORKER,
+            job_id=job.job_id,
+            lease_id=permit.lease_id,
+            succeeded=True,
+            now=NOW + timedelta(seconds=5),
+        )
+
+        serialized_events = repr(h.events)
+        self.assertNotIn(
+            "p4-06-synthetic-secret-marker", serialized_events
+        )
+        self.assertNotIn("staging.example.com", serialized_events)
 if __name__ == "__main__":
     unittest.main()

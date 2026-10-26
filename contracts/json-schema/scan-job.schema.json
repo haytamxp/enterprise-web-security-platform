@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ewstrp/contracts/scan-job.schema.json",
+  "title": "Controlled Scan Job",
+  "description": "A tenant-scoped assessment job. A queued job is not proof that a network scan has executed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "tenant_id",
+    "asset_id",
+    "requested_by",
+    "target_url",
+    "profile",
+    "idempotency_key",
+    "request_fingerprint",
+    "status",
+    "created_at",
+    "updated_at",
+    "attempt",
+    "lease_id",
+    "lease_expires_at",
+    "last_reason_code"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0"},
+    "job_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "tenant_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "asset_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "requested_by": {"type": "string", "minLength": 1, "maxLength": 128},
+    "target_url": {"type": "string", "format": "uri", "minLength": 1, "maxLength": 4096},
+    "profile": {"type": "string", "enum": ["passive", "web_baseline"]},
+    "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 256},
+    "request_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {
+      "type": "string",
+      "enum": ["pending_audit", "queued", "running", "blocked", "succeeded", "failed"]
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "attempt": {"type": "integer", "minimum": 0},
+    "lease_id": {"type": ["string", "null"], "format": "uuid"},
+    "lease_expires_at": {"type": ["string", "null"], "format": "date-time"},
+    "last_reason_code": {"type": ["string", "null"], "maxLength": 128}
+  }
+}

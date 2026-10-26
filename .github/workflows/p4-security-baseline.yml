@@ -61,7 +61,7 @@ jobs:
         run: semgrep scan --config p/security-audit --severity ERROR --error --metrics=off .
 
   dependency-audit:
-    name: Python dependency audit (pip-audit)
+    name: Python dependency audit and SBOM (pip-audit)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -78,5 +78,126 @@ jobs:
       - name: Install pinned pip-audit version
         run: python -m pip install --disable-pip-version-check "pip-audit==2.10.1"
 
-      - name: Audit declared Python dependencies
-        run: pip-audit -r requirements-dev.txt
+      - name: Audit Python dependencies and generate CycloneDX SBOM
+        run: pip-audit -r requirements-dev.txt --format cyclonedx-json --output "$RUNNER_TEMP/webshield-python-dev-dependencies.cdx.json"
+
+      - name: Summarize generated SBOM
+        if: always()
+        run: |
+          SBOM_PATH="$RUNNER_TEMP/webshield-python-dev-dependencies.cdx.json"
+          export SBOM_PATH
+
+          if [ ! -s "$SBOM_PATH" ]; then
+            echo "::error::The Python dependency SBOM was not generated."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+
+          sbom_path = os.environ["SBOM_PATH"]
+
+          with open(sbom_path, encoding="utf-8") as sbom_file:
+              bom = json.load(sbom_file)
+
+          components = bom.get("components", [])
+          vulnerabilities = bom.get("vulnerabilities", [])
+
+          print("SBOM scope: Python development dependencies")
+          print(f"Components listed: {len(components)}")
+          print(f"Vulnerability records: {len(vulnerabilities)}")
+
+          components_by_ref = {
+              component.get("bom-ref"): component
+              for component in components
+              if component.get("bom-ref")
+          }
+
+          for vulnerability in vulnerabilities:
+              vulnerability_id = vulnerability.get("id", "Unknown ID")
+              affected_refs = {
+                  item.get("ref")
+                  for item in vulnerability.get("affects", [])
+                  if item.get("ref")
+              }
+
+              affected_packages = sorted({
+                  (
+                      f"{components_by_ref[ref].get('name', 'unknown')}"
+                      f"@{components_by_ref[ref].get('version', 'unknown')}"
+                  )
+                  for ref in affected_refs
+                  if ref in components_by_ref
+              })
+
+              package_text = (
+                  f" [{', '.join(affected_packages)}]"
+                  if affected_packages
+                  else ""
+              )
+
+              print(f"- {vulnerability_id}{package_text}")
+          PY
+
+      - name: Upload Python development dependency SBOM
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-dev-dependency-sbom-${{ github.run_id }}
+          path: ${{ runner.temp }}/webshield-python-dev-dependencies.cdx.json
+          if-no-files-found: error
+          retention-days: 14
+
+  scan-scope-tests:
+    name: Scan authorization policy tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Run authorization and scope policy tests
+        run: python -m unittest discover -s tests/security -p "test_scan_scope.py" -v
+
+  scan-orchestrator-tests:
+    name: Scan orchestrator security tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Run scope and orchestration security tests
+        run: python -m unittest discover -s tests/security -p "test_scan_orchestrator.py" -v
+  risk-classification-tests:
+    name: Evidence-based risk classification tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Run risk classification security tests
+        run: python -m unittest discover -s tests/security -p "test_risk_classifier.py" -v

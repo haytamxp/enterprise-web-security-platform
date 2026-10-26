@@ -348,7 +348,7 @@ class ScanOrchestratorTests(unittest.TestCase):
         h = Harness()
         target = (
             "https://staging.example.com/products"
-            "?token=p4-06-synthetic-secret-marker"
+            "?fixture=p4-06-synthetic-secret-marker"
         )
 
         job = h.submit(target=target)

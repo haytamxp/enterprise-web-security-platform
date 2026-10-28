@@ -1,4 +1,4 @@
-﻿CREATE TABLE events (
+CREATE TABLE events (
     event_id VARCHAR(128) PRIMARY KEY,
     schema_version VARCHAR(10) NOT NULL CHECK (schema_version = '1.0'),
     source_product VARCHAR(32) NOT NULL CHECK (

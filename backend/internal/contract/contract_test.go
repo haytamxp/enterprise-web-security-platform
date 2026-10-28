@@ -2,6 +2,7 @@ package contract
 
 import (
 	"encoding/json"
+	"math"
 	"strings"
 	"testing"
 )
@@ -89,6 +90,26 @@ func TestValidateEventRejectsInvalidSeverity(t *testing.T) {
 	}
 }
 
+func TestValidateEventRejectsNonFiniteConfidence(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		confidence float64
+	}{
+		{name: "NaN", confidence: math.NaN()},
+		{name: "positive_infinity", confidence: math.Inf(1)},
+		{name: "negative_infinity", confidence: math.Inf(-1)},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			req := validEventRequest()
+			req.Confidence = floatPointer(test.confidence)
+
+			if _, err := ValidateEvent(req); err == nil {
+				t.Fatal("expected non-finite confidence to be rejected")
+			}
+		})
+	}
+}
+
 func TestValidateEventRequiresNullableFieldsToBePresent(t *testing.T) {
 	req := validEventRequest()
 	req.AssetID = nil
@@ -138,6 +159,17 @@ func TestValidateIncidentAcceptsValidRequest(t *testing.T) {
 	}
 	if len(incident.EventIDs) != 1 {
 		t.Fatalf("expected one event ID, got %d", len(incident.EventIDs))
+	}
+}
+
+func TestValidateIncidentRejectsNonFiniteConfidence(t *testing.T) {
+	for _, confidence := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
+		req := validIncidentRequest()
+		req.Confidence = floatPointer(confidence)
+
+		if _, err := ValidateIncident(req); err == nil {
+			t.Fatalf("expected non-finite confidence %v to be rejected", confidence)
+		}
 	}
 }
 

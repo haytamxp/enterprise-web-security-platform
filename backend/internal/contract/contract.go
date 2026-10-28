@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/netip"
 	"strings"
 	"time"
@@ -136,6 +137,13 @@ func checkIP(name string, value *string) error {
 	return nil
 }
 
+func checkConfidence(value *float64) error {
+	if value == nil || math.IsNaN(*value) || math.IsInf(*value, 0) || *value < 0 || *value > 1 {
+		return fmt.Errorf("confidence must be between 0 and 1")
+	}
+	return nil
+}
+
 func ValidateEvent(r EventRequest) (Event, error) {
 	var e Event
 
@@ -159,8 +167,8 @@ func ValidateEvent(r EventRequest) (Event, error) {
 	if r.Severity == nil || *r.Severity < 1 || *r.Severity > 5 {
 		return e, fmt.Errorf("severity must be an integer from 1 to 5")
 	}
-	if r.Confidence == nil || *r.Confidence < 0 || *r.Confidence > 1 {
-		return e, fmt.Errorf("confidence must be between 0 and 1")
+	if err := checkConfidence(r.Confidence); err != nil {
+		return e, err
 	}
 
 	assetID, err := checkNullableString("asset_id", r.AssetID)
@@ -238,8 +246,8 @@ func ValidateIncident(r IncidentRequest) (Incident, error) {
 	if r.SchemaVersion != SchemaVersion {
 		return i, fmt.Errorf("schema_version must be %q", SchemaVersion)
 	}
-	if r.Confidence == nil || *r.Confidence < 0 || *r.Confidence > 1 {
-		return i, fmt.Errorf("confidence must be between 0 and 1")
+	if err := checkConfidence(r.Confidence); err != nil {
+		return i, err
 	}
 	switch r.Severity {
 	case "critical", "high", "medium", "low":

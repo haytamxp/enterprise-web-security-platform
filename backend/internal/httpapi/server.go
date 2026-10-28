@@ -3,18 +3,24 @@ package httpapi
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/storage"
 )
 
-// New creates the initial local HTTP API.
 func New() http.Handler {
+	return NewWithStore(nil)
+}
+
+func NewWithStore(store *storage.Store) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{
-			"status": "ok",
-		})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
+	if store != nil {
+		RegisterIngestion(mux, store)
+	}
 	return mux
 }
 

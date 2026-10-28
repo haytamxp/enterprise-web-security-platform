@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/httpapi"
+	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/storage"
 )
 
 func main() {
@@ -20,23 +21,28 @@ func main() {
 		addr = "127.0.0.1:8080"
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	store, err := storage.Open(ctx, databaseURL)
+	if err != nil {
+		logger.Fatalf("Database initialization failed: %v", err)
+	}
+	defer store.DB.Close()
+
 	server := &http.Server{
 		Addr:              addr,
-		Handler:           httpapi.New(),
+		Handler:           httpapi.NewWithStore(store),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
-		ErrorLog:          logger,
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-
 	errCh := make(chan error, 1)
-
 	go func() {
-		logger.Printf("Starting local API on %s", addr)
+		logger.Printf("Starting API on %s", addr)
 		errCh <- server.ListenAndServe()
 	}()
 
@@ -45,21 +51,12 @@ func main() {
 		if !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatalf("HTTP server: %v", err)
 		}
-
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(), 10*time.Second,
-		)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			logger.Printf("Graceful shutdown failed: %v", err)
 			_ = server.Close()
-		}
-
-		if err := <-errCh; err != nil &&
-			!errors.Is(err, http.ErrServerClosed) {
-			logger.Printf("HTTP server stopped with error: %v", err)
 		}
 	}
 }

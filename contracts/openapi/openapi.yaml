@@ -1,24 +1,32 @@
 openapi: 3.1.0
+
 info:
   title: Enterprise Web Security & Threat Response Platform API
   version: 1.0.0
   description: |
-    Contrat initial proposé. Les routes décrivent l'API cible et ne signifient pas
-    qu'un backend opérationnel est déjà implémenté.
+    Shared HTTP contract for the enterprise security platform.
+
+    The event and incident ingestion handlers are implemented in the local
+    backend prototype. They currently do not enforce JWT authentication or
+    RBAC. Keep the service bound to loopback until authentication and
+    authorization middleware are implemented.
+
 servers:
   - url: http://127.0.0.1:8080
-    description: Développement local uniquement
+    description: Local development only
+
 security:
   - bearerAuth: []
+
 paths:
-  /health:
+  /healthz:
     get:
       operationId: getHealth
-      summary: Vérifier la disponibilité de l'API
+      summary: Check API availability
       security: []
       responses:
         '200':
-          description: API disponible
+          description: API available
           content:
             application/json:
               schema:
@@ -28,20 +36,28 @@ paths:
                   status:
                     type: string
                     const: ok
+
   /api/v1/assets:
     get:
       operationId: listAssets
-      summary: Lister les actifs autorisés par le contexte utilisateur
+      summary: List authorized assets
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       parameters:
         - in: query
           name: limit
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
         - in: query
           name: cursor
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
-          description: Page d'actifs
+          description: Page of assets
           content:
             application/json:
               schema:
@@ -50,62 +66,182 @@ paths:
                 properties:
                   items:
                     type: array
-                    items: { $ref: '../json-schema/asset.schema.json' }
+                    items:
+                      $ref: '../json-schema/asset.schema.json'
                   next_cursor:
                     type: [string, 'null']
-        '401': { description: Authentification requise }
-        '403': { description: Permission insuffisante }
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+
   /api/v1/findings:
     post:
       operationId: ingestFinding
-      summary: Soumettre un finding normalisé
-      description: Le serveur doit recalculer ou vérifier les champs sensibles et l'appartenance de l'actif au tenant.
+      summary: Submit a normalized security finding
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '../json-schema/finding.schema.json' }
+            schema:
+              $ref: '../json-schema/finding.schema.json'
       responses:
-        '202': { description: Finding accepté pour traitement }
-        '400': { description: Payload invalide }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
-        '409': { description: Conflit d'idempotence ou de version }
+        '202':
+          description: Finding accepted for processing
+        '400':
+          description: Invalid payload
+        '401':
+          description: Authentication required
+        '403':
+          description: Authorization denied
+        '409':
+          description: Idempotency or version conflict
+
   /api/v1/events:
     post:
       operationId: ingestSecurityEvent
-      summary: Ingérer un événement de sécurité normalisé
+      summary: Ingest a normalized security event
+      description: |
+        Stores a validated event. The current prototype does not enforce
+        authentication; do not expose this endpoint outside loopback.
+      x-implementation-status: implemented-local-prototype
+      security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '../json-schema/security-event.schema.json' }
+            schema:
+              $ref: '../json-schema/security-event.schema.json'
+            example:
+              schema_version: '1.0'
+              event_id: evt-demo-001
+              timestamp: '2026-10-20T10:00:00Z'
+              source_product: suricata
+              event_type: alert
+              asset_id: asset-web-001
+              severity: 3
+              confidence: 0.92
+              correlation_id: null
       responses:
-        '202': { description: Événement accepté }
-        '400': { description: Payload invalide }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
+        '201':
+          description: Event stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventIngestResponse'
+              example:
+                event_id: evt-demo-001
+                stored: true
+        '400':
+          description: Invalid JSON or event contract violation
+        '409':
+          description: Duplicate event_id
+        '500':
+          description: Event could not be stored
+
+  /api/v1/incidents:
+    post:
+      operationId: createIncident
+      summary: Create a security incident
+      description: |
+        Stores an incident and associates its existing event IDs. New
+        incidents must use status open. The current prototype does not
+        enforce authentication; do not expose this endpoint outside loopback.
+      x-implementation-status: implemented-local-prototype
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../json-schema/incident.schema.json'
+            example:
+              schema_version: '1.0'
+              incident_id: inc-demo-001
+              asset_id: asset-web-001
+              timestamp: '2026-10-20T10:05:00Z'
+              severity: high
+              confidence: 0.86
+              title: Synthetic suspicious activity
+              correlation_id: corr-demo-001
+              event_ids:
+                - evt-demo-001
+              description: Illustrative incident.
+              playbook_ref: triage-web-anomaly-v1
+              status: open
+      responses:
+        '201':
+          description: Incident stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentCreateResponse'
+              example:
+                incident_id: inc-demo-001
+                stored: true
+        '400':
+          description: Invalid JSON or incident contract violation
+        '409':
+          description: Duplicate incident_id
+        '422':
+          description: One or more referenced event IDs do not exist
+        '500':
+          description: Incident could not be stored
+
   /api/v1/incidents/{incidentId}:
     get:
       operationId: getIncident
-      summary: Lire un incident dans le périmètre autorisé
+      summary: Read an incident by ID
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       parameters:
         - in: path
           name: incidentId
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
-          description: Incident trouvé
+          description: Incident found
           content:
             application/json:
-              schema: { $ref: '../json-schema/incident.schema.json' }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
-        '404': { description: Incident introuvable }
+              schema:
+                $ref: '../json-schema/incident.schema.json'
+        '401':
+          description: Authentication required
+        '403':
+          description: Authorization denied
+        '404':
+          description: Incident not found
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  schemas:
+    EventIngestResponse:
+      type: object
+      additionalProperties: false
+      required: [event_id, stored]
+      properties:
+        event_id:
+          type: string
+        stored:
+          type: boolean
+          const: true
+
+    IncidentCreateResponse:
+      type: object
+      additionalProperties: false
+      required: [incident_id, stored]
+      properties:
+        incident_id:
+          type: string
+        stored:
+          type: boolean
+          const: true

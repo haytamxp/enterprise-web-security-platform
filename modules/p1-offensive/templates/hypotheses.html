@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Hypothèses à trier — Dashboard P1</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 60px auto; color: #1a1a1a; }
+    nav a { margin-right: 16px; }
+    .vide { margin-top: 24px; padding: 16px; background: #f1f3f4; border-radius: 6px; color: #5f6368; }
+    .carte { margin-top: 16px; padding: 16px; border: 1px solid #ddd; border-radius: 6px; }
+    .statut { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; background: #fef7e0; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">Accueil</a>
+    <a href="/scan-results">Scan Results</a>
+    <a href="/hypotheses">Hypothèses à trier</a>
+  </nav>
+
+  <h1>Hypothèses à trier</h1>
+  <p>Pistes de vulnérabilité proposées par le LLM, à partir des résultats de scan. Statut initial toujours <code>needs_verification</code> — seul un humain peut confirmer ou rejeter.</p>
+
+  {% if hypotheses|length == 0 %}
+    <div class="vide">Aucune hypothèse générée pour l'instant. Elles apparaîtront ici une fois le module de génération (LLM) construit.</div>
+  {% else %}
+    {% for h in hypotheses %}
+      <div class="carte">
+        <span class="statut">{{ h.status }}</span>
+        <p><strong>{{ h.asset }}</strong> — {{ h.category }}</p>
+        <p>{{ h.hypothesis }}</p>
+      </div>
+    {% endfor %}
+  {% endif %}
+</body>
+</html>

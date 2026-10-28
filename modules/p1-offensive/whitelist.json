@@ -1,0 +1,12 @@
+[
+  {
+    "domain": "orchidisland.immo",
+    "include_subdomains": false,
+    "excluded_paths": [],
+    "excluded_subdomains": [],
+    "authorized_from": "2026-01-01",
+    "authorized_until": "2026-12-31",
+    "authorized_by": "A COMPLETER - nom du responsable",
+    "notes": "A COMPLETER - reference du contrat/accord de pentest"
+  }
+]

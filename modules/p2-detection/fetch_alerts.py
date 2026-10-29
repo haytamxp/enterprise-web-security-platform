@@ -5,7 +5,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # L'Indexer écoute sur le port 9200
-INDEXER_URL = "https://192.168.116.130:9200"
+INDEXER_URL = "https://192.168.100.52:9200"
 INDEXER_USER = "admin"
 INDEXER_PASS = "admin"
 

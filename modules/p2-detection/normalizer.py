@@ -1,63 +1,50 @@
 import json
 import uuid
-from datetime import datetime
 
-# 1. Charger la table des actifs
+# Table de correspondance des actifs
 with open('asset_map.json', 'r') as f:
     ASSET_MAP = json.load(f)
 
-def get_asset_id(ip_or_domain):
-    """Retourne l'ID de l'actif ou 'unknown-asset' si non trouvé"""
-    return ASSET_MAP.get(ip_or_domain, "unknown-asset")
+def get_asset_id(ip):
+    return ASSET_MAP.get(ip, "unknown-asset")
 
-def normalize_suricata_event(raw_event):
+def normalize_wazuh_alert(raw_alert):
     """
-    Prend un événement EVE JSON de Suricata (dictionnaire) 
-    et le transforme selon le contrat P2 -> P3.
+    Transforme une alerte brute de Wazuh (peu importe la source)
+    selon le contrat P2 -> P3.
     """
-    # Vérifier si c'est bien une alerte
-    if raw_event.get("event_type") != "alert":
-        return None
-
-    alert_info = raw_event.get("alert", {})
+    rule = raw_alert.get('rule', {})
+    data = raw_alert.get('data', {})
     
-    # Création de l'événement normalisé
+    # 1. Détecter la source (Suricata ou Wazuh système)
+    decoder = raw_alert.get('decoder', {}).get('name', '').lower()
+    source_product = "suricata" if "suricata" in decoder or "json" in decoder else "wazuh"
+    
+    # 2. Extraire les IPs si elles existent
+    src_ip = data.get('srcip') or data.get('src_ip')
+    dest_ip = data.get('dstip') or data.get('dest_ip') or data.get('dstuser')
+    
+    # 3. Convertir le niveau Wazuh (0-15) en sévérité (1-5)
+    wazuh_level = rule.get('level', 1)
+    severity = min(5, max(1, wazuh_level // 2))
+    
+    # 4. Construire l'événement normalisé (conforme au contrat P3)
     normalized = {
         "event_id": f"evt-{uuid.uuid4().hex[:12]}",
         "schema_version": "1.0",
-        "source_product": "suricata",
-        "event_type": "alert",
-        "asset_id": get_asset_id(raw_event.get("dest_ip")),
-        "timestamp": raw_event.get("timestamp"),
-        "severity": alert_info.get("severity", 3), 
-        "confidence": 0.90, # Valeur par défaut pour Suricata
+        "source_product": source_product,
+        "event_type": "alert", 
+        "asset_id": get_asset_id(dest_ip),
+        "timestamp": raw_alert.get('timestamp'),
+        "severity": severity,
+        "confidence": 0.85, # Valeur par défaut
         "correlation_id": None,
-        "src_ip": raw_event.get("src_ip"),
-        "dest_ip": raw_event.get("dest_ip"),
-        "rule_id": str(alert_info.get("signature_id")),
-        "signature": alert_info.get("signature"),
-        "description": alert_info.get("category", ""),
-        "raw_ref": None
+        "src_ip": src_ip,
+        "dest_ip": dest_ip,
+        "rule_id": str(rule.get('id')),
+        "signature": rule.get('description'),
+        "description": rule.get('description'),
+        "raw_ref": raw_alert.get('id')
     }
     
     return normalized
-
-# --- TEST RAPIDE (Simule une lecture de log) ---
-if __name__ == "__main__":
-    # Copiez-collez ici l'une des alertes JSON que vous avez vues dans le Dashboard Wazuh
-    # (ou utilisez celle-ci comme exemple)
-    example_suricata_alert = {
-        "timestamp": "2026-10-24T10:55:35.467815-0400",
-        "event_type": "alert",
-        "src_ip": "192.168.116.129",
-        "dest_ip": "192.168.116.254",
-        "alert": {
-            "signature_id": 2022973,
-            "signature": "ET INFO Possible Kali Linux hostname in DHCP Request Packet",
-            "severity": 1
-        }
-    }
-
-    result = normalize_suricata_event(example_suricata_alert)
-    print("--- Événement Normalisé ---")
-    print(json.dumps(result, indent=2))

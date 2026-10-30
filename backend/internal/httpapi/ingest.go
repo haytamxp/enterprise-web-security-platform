@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/contract"
 	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/storage"
@@ -36,12 +35,15 @@ func (a *IngestAPI) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	if !decodeBody(w, r, &req) {
 		return
 	}
-	event, err := contract.ValidateEvent(req)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+	event, validationErrors := req.Validate()
+	if len(validationErrors) > 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error":   "invalid event payload",
+			"details": validationErrors,
+		})
 		return
 	}
-	if err = a.Store.InsertEvent(r.Context(), event); err != nil {
+	if err := a.Store.InsertEvent(r.Context(), event); err != nil {
 		if errors.Is(err, storage.ErrDuplicate) {
 			writeJSON(w, http.StatusConflict, map[string]string{"error": "duplicate event_id"})
 			return
@@ -57,12 +59,15 @@ func (a *IngestAPI) CreateIncident(w http.ResponseWriter, r *http.Request) {
 	if !decodeBody(w, r, &req) {
 		return
 	}
-	incident, err := contract.ValidateIncident(req)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+	incident, validationErrors := req.Validate()
+	if len(validationErrors) > 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error":   "invalid incident payload",
+			"details": validationErrors,
+		})
 		return
 	}
-	if err = a.Store.InsertIncident(r.Context(), incident); err != nil {
+	if err := a.Store.InsertIncident(r.Context(), incident); err != nil {
 		switch {
 		case errors.Is(err, storage.ErrDuplicate):
 			writeJSON(w, http.StatusConflict, map[string]string{"error": "duplicate incident_id"})
@@ -80,5 +85,4 @@ func RegisterIngestion(mux *http.ServeMux, store *storage.Store) {
 	api := &IngestAPI{Store: store}
 	mux.HandleFunc("POST /api/v1/events", api.CreateEvent)
 	mux.HandleFunc("POST /api/v1/incidents", api.CreateIncident)
-	_ = strings.TrimSpace // keep imports explicit if handlers are extended
 }

@@ -100,7 +100,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, expiresAt, err := a.Tokens.Issue(user.ID, user.Role)
+	token, expiresAt, err := a.Tokens.Issue(user.ID, user.TenantID, user.Role)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
@@ -134,8 +134,9 @@ func (a *AuthenticationAPI) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"user_id": principal.UserID,
-		"role":    principal.Role,
+		"user_id":   principal.UserID,
+		"tenant_id": principal.TenantID,
+		"role":      principal.Role,
 	})
 }
 
@@ -159,21 +160,29 @@ func RegisterAuthentication(
 	)
 }
 
-// RegisterProtectedIngestion protects the ingestion endpoints with JWT.
+// RegisterProtectedIngestion protects P2 ingestion using connector credentials.
+// Human JWTs are deliberately not accepted by these machine-to-machine routes.
 func RegisterProtectedIngestion(
 	mux *http.ServeMux,
 	store *storage.Store,
-	tokens *auth.TokenManager,
 ) {
 	api := &IngestAPI{Store: store}
 
 	mux.Handle(
 		"POST /api/v1/events",
-		AuthMiddleware(tokens, http.HandlerFunc(api.CreateEvent)),
+		ConnectorAuthMiddleware(
+			store,
+			storage.ConnectorScopeEventsIngest,
+			http.HandlerFunc(api.CreateEvent),
+		),
 	)
 
 	mux.Handle(
 		"POST /api/v1/incidents",
-		AuthMiddleware(tokens, http.HandlerFunc(api.CreateIncident)),
+		ConnectorAuthMiddleware(
+			store,
+			storage.ConnectorScopeIncidentsCreate,
+			http.HandlerFunc(api.CreateIncident),
+		),
 	)
 }

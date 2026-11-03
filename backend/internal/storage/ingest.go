@@ -5,24 +5,62 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/contract"
 )
 
 var ErrDuplicate = errors.New("record already exists")
 var ErrUnknownEvent = errors.New("one or more referenced events do not exist")
+var ErrTenantRequired = errors.New("tenant ID is required")
 
-func (s *Store) InsertEvent(ctx context.Context, e contract.Event) error {
+func (s *Store) InsertEvent(
+	ctx context.Context,
+	tenantID string,
+	e contract.Event,
+) error {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return ErrTenantRequired
+	}
+
 	_, err := s.DB.ExecContext(ctx, `
 INSERT INTO events (
-event_id, schema_version, source_product, event_type, asset_id,
-occurred_at, severity, confidence, correlation_id, src_ip, dest_ip,
-rule_id, signature, description, raw_ref
-) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+tenant_id,
+event_id,
+schema_version,
+source_product,
+event_type,
+asset_id,
+occurred_at,
+severity,
+confidence,
+correlation_id,
+src_ip,
+dest_ip,
+rule_id,
+signature,
+description,
+raw_ref
+)
+VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 `,
-		e.EventID, e.SchemaVersion, e.SourceProduct, e.EventType, e.AssetID,
-		e.OccurredAt, e.Severity, e.Confidence, e.CorrelationID, e.SrcIP,
-		e.DestIP, e.RuleID, e.Signature, e.Description, e.RawRef,
+		tenantID,
+		e.EventID,
+		e.SchemaVersion,
+		e.SourceProduct,
+		e.EventType,
+		e.AssetID,
+		e.OccurredAt,
+		e.Severity,
+		e.Confidence,
+		e.CorrelationID,
+		e.SrcIP,
+		e.DestIP,
+		e.RuleID,
+		e.Signature,
+		e.Description,
+		e.RawRef,
 	)
 
 	if err != nil {
@@ -36,21 +74,35 @@ rule_id, signature, description, raw_ref
 	return nil
 }
 
-func (s *Store) InsertIncident(ctx context.Context, i contract.Incident) error {
+func (s *Store) InsertIncident(
+	ctx context.Context,
+	tenantID string,
+	i contract.Incident,
+) error {
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		return ErrTenantRequired
+	}
+
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin incident transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	// Resolve external event IDs to internal database IDs.
+	// Resolve event IDs only inside the authenticated tenant.
 	eventDBIDs := make([]int64, 0, len(i.EventIDs))
 
 	for _, eventID := range i.EventIDs {
 		var dbID int64
 
-		err = tx.QueryRowContext(ctx,
-			`SELECT id FROM events WHERE event_id = $1`,
+		err = tx.QueryRowContext(
+			ctx,
+			`SELECT id
+ FROM events
+ WHERE tenant_id = $1::uuid
+   AND event_id = $2`,
+			tenantID,
 			eventID,
 		).Scan(&dbID)
 
@@ -64,20 +116,39 @@ func (s *Store) InsertIncident(ctx context.Context, i contract.Incident) error {
 		eventDBIDs = append(eventDBIDs, dbID)
 	}
 
-	// Insert incident and retrieve its internal database ID.
+	// Insert the incident with the authenticated tenant ID.
 	var incidentDBID int64
 
 	err = tx.QueryRowContext(ctx, `
 INSERT INTO incidents (
-incident_id, schema_version, asset_id, occurred_at, severity,
-confidence, title, correlation_id, description, playbook_ref, status
+tenant_id,
+incident_id,
+schema_version,
+asset_id,
+occurred_at,
+severity,
+confidence,
+title,
+correlation_id,
+description,
+playbook_ref,
+status
 )
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+VALUES ($1::uuid,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 RETURNING id
 `,
-		i.IncidentID, i.SchemaVersion, i.AssetID, i.OccurredAt, i.Severity,
-		i.Confidence, i.Title, i.CorrelationID, i.Description,
-		i.PlaybookRef, i.Status,
+		tenantID,
+		i.IncidentID,
+		i.SchemaVersion,
+		i.AssetID,
+		i.OccurredAt,
+		i.Severity,
+		i.Confidence,
+		i.Title,
+		i.CorrelationID,
+		i.Description,
+		i.PlaybookRef,
+		i.Status,
 	).Scan(&incidentDBID)
 
 	if err != nil {
@@ -88,11 +159,19 @@ RETURNING id
 		return fmt.Errorf("insert incident: %w", err)
 	}
 
-	// Link incident and events using internal BIGINT IDs.
+	// The composite foreign keys also enforce tenant consistency.
 	for _, eventDBID := range eventDBIDs {
-		_, err = tx.ExecContext(ctx,
-			`INSERT INTO incident_events (incident_id, event_id) VALUES ($1,$2)`,
-			incidentDBID, eventDBID,
+		_, err = tx.ExecContext(ctx, `
+INSERT INTO incident_events (
+tenant_id,
+incident_id,
+event_id
+)
+VALUES ($1::uuid,$2,$3)
+`,
+			tenantID,
+			incidentDBID,
+			eventDBID,
 		)
 
 		if err != nil {
@@ -100,7 +179,10 @@ RETURNING id
 			if errors.As(err, &pgErr) {
 				switch pgErr.SQLState() {
 				case "23503":
-					return fmt.Errorf("%w: referenced event was deleted", ErrUnknownEvent)
+					return fmt.Errorf(
+						"%w: referenced event or tenant does not exist",
+						ErrUnknownEvent,
+					)
 				case "23505":
 					return ErrDuplicate
 				}

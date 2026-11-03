@@ -11,8 +11,9 @@ import (
 type principalContextKey struct{}
 
 type Principal struct {
-	UserID string
-	Role   string
+	UserID   string
+	TenantID string
+	Role     string
 }
 
 func PrincipalFromContext(ctx context.Context) (Principal, bool) {
@@ -54,8 +55,9 @@ func AuthMiddleware(tokens *auth.TokenManager, next http.Handler) http.Handler {
 		}
 
 		principal := Principal{
-			UserID: claims.Subject,
-			Role:   claims.Role,
+			UserID:   claims.Subject,
+			TenantID: claims.TenantID,
+			Role:     claims.Role,
 		}
 
 		ctx := context.WithValue(r.Context(), principalContextKey{}, principal)

@@ -72,7 +72,7 @@ func TestAuthMiddlewareRejectsInvalidScheme(t *testing.T) {
 func TestAuthMiddlewareAcceptsValidToken(t *testing.T) {
 	manager := newHTTPTestTokenManager(t)
 
-	signed, _, err := manager.Issue("test-user-123", auth.RoleAnalyst)
+	signed, _, err := manager.Issue("test-user-123", "00000000-0000-4000-8000-000000000001", auth.RoleAnalyst)
 	if err != nil {
 		t.Fatalf("issue token: %v", err)
 	}

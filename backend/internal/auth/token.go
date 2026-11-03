@@ -20,7 +20,8 @@ const (
 var ErrInvalidToken = errors.New("invalid or expired token")
 
 type TokenClaims struct {
-	Role string `json:"role"`
+	TenantID string `json:"tenant_id"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -59,14 +60,47 @@ func validRole(role string) bool {
 	}
 }
 
-// Issue creates a signed JWT for an authenticated user.
-func (m *TokenManager) Issue(userID, role string) (string, time.Time, error) {
+// validTenantID checks the canonical UUID structure expected for tenant IDs.
+func validTenantID(value string) bool {
+	if len(value) != 36 {
+		return false
+	}
+
+	for i := 0; i < len(value); i++ {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if value[i] != '-' {
+				return false
+			}
+			continue
+		}
+
+		c := value[i]
+		if !((c >= '0' && c <= '9') ||
+			(c >= 'a' && c <= 'f') ||
+			(c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Issue creates a signed JWT containing the user's tenant identity and role.
+func (m *TokenManager) Issue(
+	userID string,
+	tenantID string,
+	role string,
+) (string, time.Time, error) {
 	if m == nil {
 		return "", time.Time{}, errors.New("token manager is not configured")
 	}
 
 	if strings.TrimSpace(userID) == "" {
 		return "", time.Time{}, errors.New("user ID is required")
+	}
+
+	if !validTenantID(tenantID) {
+		return "", time.Time{}, errors.New("valid tenant ID is required")
 	}
 
 	if !validRole(role) {
@@ -77,7 +111,8 @@ func (m *TokenManager) Issue(userID, role string) (string, time.Time, error) {
 	expiresAt := now.Add(m.ttl)
 
 	claims := TokenClaims{
-		Role: role,
+		TenantID: tenantID,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    m.issuer,
 			Subject:   userID,
@@ -96,7 +131,7 @@ func (m *TokenManager) Issue(userID, role string) (string, time.Time, error) {
 	return signedToken, expiresAt, nil
 }
 
-// Verify validates the token signature and registered claims.
+// Verify validates the signature, registered claims and tenant identity.
 func (m *TokenManager) Verify(rawToken string) (*TokenClaims, error) {
 	if m == nil || rawToken == "" || len(rawToken) > 8192 {
 		return nil, ErrInvalidToken
@@ -126,7 +161,8 @@ func (m *TokenManager) Verify(rawToken string) (*TokenClaims, error) {
 	if claims.Subject == "" ||
 		claims.IssuedAt == nil ||
 		claims.ExpiresAt == nil ||
-		!validRole(claims.Role) {
+		!validRole(claims.Role) ||
+		!validTenantID(claims.TenantID) {
 		return nil, ErrInvalidToken
 	}
 

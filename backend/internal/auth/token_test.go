@@ -37,7 +37,7 @@ func TestTokenIssueAndVerify(t *testing.T) {
 		t.Fatalf("create token manager: %v", err)
 	}
 
-	signed, expiresAt, err := manager.Issue("user-123", RoleAdmin)
+	signed, expiresAt, err := manager.Issue("user-123", "00000000-0000-4000-8000-000000000001", RoleAdmin)
 	if err != nil {
 		t.Fatalf("issue token: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestTokenRejectsTampering(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	signed, _, err := manager.Issue("user-123", RoleAnalyst)
+	signed, _, err := manager.Issue("user-123", "00000000-0000-4000-8000-000000000001", RoleAnalyst)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestTokenRejectsWrongIssuer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	signed, _, err := issuerA.Issue("user-123", RoleViewer)
+	signed, _, err := issuerA.Issue("user-123", "00000000-0000-4000-8000-000000000001", RoleViewer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestTokenRejectsExpiredToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	signed, _, err := manager.Issue("user-123", RoleResponder)
+	signed, _, err := manager.Issue("user-123", "00000000-0000-4000-8000-000000000001", RoleResponder)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestTokenRejectsInvalidRole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := manager.Issue("user-123", "superuser"); err == nil {
+	if _, _, err := manager.Issue("user-123", "00000000-0000-4000-8000-000000000001", "superuser"); err == nil {
 		t.Fatal("expected invalid role to be rejected")
 	}
 }

@@ -11,6 +11,7 @@ import (
 // User represents a persisted platform user.
 type User struct {
 	ID           string
+	TenantID     string
 	Email        string
 	PasswordHash string
 	Role         string
@@ -20,16 +21,38 @@ type User struct {
 	LastLoginAt  *time.Time
 }
 
-// CreateUser stores a user using an already-computed password hash.
+// CreateUser stores a user in the specified tenant.
 // The caller must hash the password before calling this method.
 func (s *Store) CreateUser(
 	ctx context.Context,
+	tenantID string,
 	email string,
 	passwordHash string,
 	role string,
 ) (*User, error) {
+	return createUser(ctx, s.DB, tenantID, email, passwordHash, role)
+}
+
+// userQueryRower is implemented by *sql.DB and *sql.Tx.
+type userQueryRower interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+// createUser contains the shared user validation and insertion logic.
+func createUser(
+	ctx context.Context,
+	queryer userQueryRower,
+	tenantID string,
+	email string,
+	passwordHash string,
+	role string,
+) (*User, error) {
+	tenantID = strings.TrimSpace(tenantID)
 	email = strings.ToLower(strings.TrimSpace(email))
 
+	if tenantID == "" {
+		return nil, fmt.Errorf("create user: tenant ID is required")
+	}
 	if email == "" {
 		return nil, fmt.Errorf("create user: email is required")
 	}
@@ -46,19 +69,21 @@ func (s *Store) CreateUser(
 	user := &User{}
 	var lastLogin sql.NullTime
 
-	err := s.DB.QueryRowContext(ctx, `
-		INSERT INTO users (email, password_hash, role)
-		VALUES ($1, $2, $3)
-		RETURNING
-			user_id::text,
-			email,
-			password_hash,
-			role,
-			is_active,
-			created_at,
-			updated_at,
-			last_login_at
-	`, email, passwordHash, role).Scan(
+	err := queryer.QueryRowContext(ctx, `
+INSERT INTO users (tenant_id, email, password_hash, role)
+VALUES ($1::uuid, $2, $3, $4)
+RETURNING
+tenant_id::text,
+user_id::text,
+email,
+password_hash,
+role,
+is_active,
+created_at,
+updated_at,
+last_login_at
+`, tenantID, email, passwordHash, role).Scan(
+		&user.TenantID,
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -79,8 +104,7 @@ func (s *Store) CreateUser(
 	return user, nil
 }
 
-// GetUserByEmail retrieves a user without revealing whether an account
-// exists to an unauthenticated client. HTTP handlers must handle errors safely.
+// GetUserByEmail retrieves a user by email.
 func (s *Store) GetUserByEmail(
 	ctx context.Context,
 	email string,
@@ -91,18 +115,20 @@ func (s *Store) GetUserByEmail(
 	var lastLogin sql.NullTime
 
 	err := s.DB.QueryRowContext(ctx, `
-		SELECT
-			user_id::text,
-			email,
-			password_hash,
-			role,
-			is_active,
-			created_at,
-			updated_at,
-			last_login_at
-		FROM users
-		WHERE LOWER(email) = $1
-	`, email).Scan(
+SELECT
+tenant_id::text,
+user_id::text,
+email,
+password_hash,
+role,
+is_active,
+created_at,
+updated_at,
+last_login_at
+FROM users
+WHERE LOWER(email) = $1
+`, email).Scan(
+		&user.TenantID,
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -126,11 +152,11 @@ func (s *Store) GetUserByEmail(
 // UpdateLastLogin records a successful login.
 func (s *Store) UpdateLastLogin(ctx context.Context, userID string) error {
 	result, err := s.DB.ExecContext(ctx, `
-		UPDATE users
-		SET last_login_at = NOW(),
-		    updated_at = NOW()
-		WHERE user_id = $1::uuid
-	`, userID)
+UPDATE users
+SET last_login_at = NOW(),
+    updated_at = NOW()
+WHERE user_id = $1::uuid
+`, userID)
 	if err != nil {
 		return fmt.Errorf("update last login: %w", err)
 	}

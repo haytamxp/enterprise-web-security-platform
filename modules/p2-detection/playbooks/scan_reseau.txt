@@ -1,0 +1,6 @@
+Titre : Playbook Scan de Ports
+Contexte : Détection de scan réseau (Nmap, etc.).
+Actions immédiates :
+1. Bloquer l'IP source pendant 24h.
+2. Vérifier les logs de la machine cible.
+3. Alerter l'équipe réseau si le scan est interne.

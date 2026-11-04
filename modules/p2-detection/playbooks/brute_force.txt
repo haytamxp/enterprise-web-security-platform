@@ -1,0 +1,10 @@
+Titre : Playbook Brute Force SSH
+Contexte : Détection de 5 échecs d'authentification consécutifs sur le port SSH.
+Actions immédiates :
+1. Bloquer l'IP source au niveau du pare-feu.
+2. Vérifier si une connexion a réussi après les échecs.
+3. Si succès, isoler immédiatement le serveur compromis.
+4. Réinitialiser le mot de passe du compte ciblé.
+Actions à long terme :
+- Activer Fail2Ban.
+- Désactiver l'authentification par mot de passe pour SSH.

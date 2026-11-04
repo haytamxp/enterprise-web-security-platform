@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. La base de données vectorielle
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: orchid_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/qdrant_storage:/qdrant/storage:z
+    restart: unless-stopped
+    networks:
+      - orchid-net
+
+  # 2. Ton pipeline de détection (P2)
+  detection-pipeline:
+    build: .
+    container_name: orchid_p2_pipeline
+    depends_on:
+      - qdrant
+    environment:
+      - QDRANT_HOST=qdrant  # Note: on utilise le nom du service, pas localhost
+      - QDRANT_PORT=6333
+      - WAZUH_INDEXER_URL=https://192.168.100.52:9200
+      - WAZUH_USER=admin
+      - WAZUH_PASSWORD=admin
+      - GEMINI_API_KEY=${GEMINI_API_KEY} # Sera lu depuis le fichier .env
+    volumes:
+      - ./playbooks:/app/playbooks
+    networks:
+      - orchid-net
+    restart: unless-stopped
+
+networks:
+  orchid-net:
+    driver: bridge

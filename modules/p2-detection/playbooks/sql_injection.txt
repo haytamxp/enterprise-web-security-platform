@@ -1,0 +1,8 @@
+Titre : Playbook Injection SQL
+Contexte : Détection d'une tentative d'injection SQL.
+Actions immédiates :
+1. Analyser les logs du serveur web (erreurs 500, accès non autorisés).
+2. Vérifier l'intégrité des données de la base.
+3. Désactiver temporairement le formulaire vulnérable si confirmé.
+Actions correctives :
+- Remplacer les requêtes concaténées par des requêtes paramétrées.

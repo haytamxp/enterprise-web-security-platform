@@ -36,7 +36,7 @@ func NewWithStore(store *storage.Store) http.Handler {
 	return mux
 }
 
-// NewWithAuth registers authentication and protects ingestion endpoints.
+// NewWithAuth registers authentication, ingestion, and human-user APIs.
 func NewWithAuth(store *storage.Store, tokens *auth.TokenManager) http.Handler {
 	mux := newMux()
 
@@ -47,6 +47,8 @@ func NewWithAuth(store *storage.Store, tokens *auth.TokenManager) http.Handler {
 
 	RegisterAuthentication(mux, store, tokens)
 	RegisterProtectedIngestion(mux, store)
+	RegisterAssets(mux, store, tokens)
+	RegisterFindings(mux, store, tokens)
 
 	return mux
 }

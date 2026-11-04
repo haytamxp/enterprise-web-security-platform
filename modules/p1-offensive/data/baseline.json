@@ -1,0 +1,9 @@
+{
+  "target": "https://orchidisland.immo/",
+  "timestamp": "2026-10-28T11:49:54.746706",
+  "nombre_echantillons": 20,
+  "moyenne_ms": 661.4104900000711,
+  "ecart_type_ms": 458.83279874932646,
+  "seuil_degrade_ms": 2037.9088862480505,
+  "seuil_critique_ms": 3414.40728249603
+}

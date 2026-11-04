@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Scope Manager — Dashboard P1</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 60px auto; color: #1a1a1a; }
+    nav a { margin-right: 16px; }
+    label { display: block; margin-top: 16px; font-weight: 600; }
+    input[type="text"] { width: 100%; padding: 8px; font-size: 1rem; box-sizing: border-box; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+    .resultat { margin-top: 24px; padding: 16px; border-radius: 6px; }
+    .autorise { background: #e6f4ea; border: 1px solid #34a853; }
+    .refuse { background: #fce8e6; border: 1px solid #ea4335; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">Accueil</a>
+    <a href="/scan-results">Scan Results</a>
+    <a href="/hypotheses">Hypothèses à trier</a>
+  </nav>
+
+  <h1>Scope Manager — Vérification de périmètre</h1>
+
+  <form method="POST">
+    <label for="url">URL à tester</label>
+    <input type="text" id="url" name="url" placeholder="https://orchidisland.immo/..." required>
+
+    <label>
+      <input type="checkbox" name="autorisation">
+      Je confirme disposer d'une autorisation écrite valide pour tester cette cible
+    </label>
+
+    <button type="submit">Vérifier</button>
+  </form>
+
+  {% if resultat %}
+    <div class="resultat {{ 'autorise' if resultat.autorise else 'refuse' }}">
+      <strong>{{ '✅ AUTORISÉ' if resultat.autorise else '❌ REFUSÉ' }}</strong><br>
+      URL testée : {{ resultat.url }}<br>
+      Raison : {{ resultat.raison }}
+    </div>
+  {% endif %}
+</body>
+</html>

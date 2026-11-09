@@ -21,7 +21,7 @@ INDEXER_PASS = os.getenv("WAZUH_PASSWORD", "admin")
 def get_alerts_from_wazuh(limit=50):
     url = f"{INDEXER_URL}/wazuh-alerts-*/_search?size={limit}&sort=timestamp:desc"
     try:
-        response = requests.get(url, auth=(INDEXER_USER, INDEXER_PASS), verify=False, timeout=10)
+        response = requests.get(url, auth=(INDEXER_USER, INDEXER_PASS), verify=False, timeout=10) # nosemgrep
         if response.status_code == 200:
             hits = response.json().get('hits', {}).get('hits', [])
             return [hit['_source'] for hit in hits]

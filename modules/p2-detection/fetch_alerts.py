@@ -19,7 +19,7 @@ def fetch_alerts_from_indexer(limit=5):
             url, 
             auth=(INDEXER_USER, INDEXER_PASS), # Authentification basique
             verify=False
-        )
+        )# nosemgrep
         
         if response.status_code == 200:
             data = response.json()

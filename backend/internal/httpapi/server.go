@@ -49,6 +49,7 @@ func NewWithAuth(store *storage.Store, tokens *auth.TokenManager) http.Handler {
 	RegisterProtectedIngestion(mux, store)
 	RegisterAssets(mux, store, tokens)
 	RegisterFindings(mux, store, tokens)
+	RegisterRemediations(mux, store, tokens)
 
 	return mux
 }

@@ -50,6 +50,7 @@ func NewWithAuth(store *storage.Store, tokens *auth.TokenManager) http.Handler {
 	RegisterAssets(mux, store, tokens)
 	RegisterFindings(mux, store, tokens)
 	RegisterRemediations(mux, store, tokens)
+	RegisterResponseOrchestration(mux, store, tokens)
 
 	return mux
 }

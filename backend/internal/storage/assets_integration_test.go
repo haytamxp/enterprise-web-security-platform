@@ -174,12 +174,23 @@ func TestListAssetsRejectsInvalidPagination(t *testing.T) {
 func TestAssetStorageIntegration(t *testing.T) {
 	store, ctx := openTenantIngestTestStore(t)
 
-	tenantA := getDefaultTenantID(t, ctx, store)
+	var tenantA string
 
 	suffix := strconv.FormatInt(time.Now().UnixNano(), 10)
 	prefix := "m4-assets-" + suffix
 
 	tenantSlug := "m4-assets-tenant-" + suffix
+
+	if err := store.DB.QueryRowContext(ctx, `
+INSERT INTO tenants (name, slug)
+VALUES ($1, $2)
+RETURNING tenant_id::text
+`,
+		"M4 Asset Integration Test A",
+		tenantSlug+"-a",
+	).Scan(&tenantA); err != nil {
+		t.Fatalf("create first test tenant: %v", err)
+	}
 
 	var tenantB string
 
@@ -188,8 +199,8 @@ INSERT INTO tenants (name, slug)
 VALUES ($1, $2)
 RETURNING tenant_id::text
 `,
-		"M4 Asset Integration Test",
-		tenantSlug,
+		"M4 Asset Integration Test B",
+		tenantSlug+"-b",
 	).Scan(&tenantB)
 
 	if err != nil {
@@ -215,11 +226,12 @@ RETURNING tenant_id::text
 
 		_, err = store.DB.ExecContext(
 			cleanupCtx,
-			`DELETE FROM tenants WHERE tenant_id = $1::uuid`,
+			`DELETE FROM tenants WHERE tenant_id IN ($1::uuid, $2::uuid)`,
+			tenantA,
 			tenantB,
 		)
 		if err != nil {
-			t.Errorf("cleanup test tenant: %v", err)
+			t.Errorf("cleanup test tenants: %v", err)
 		}
 	})
 

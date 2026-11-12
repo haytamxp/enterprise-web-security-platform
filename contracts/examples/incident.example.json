@@ -1,25 +1,16 @@
 {
   "schema_version": "1.0",
   "incident_id": "inc-demo-001",
-  "tenant_id": "tenant-demo",
-  "title": "Synthetic suspicious activity against demo asset",
-  "summary": "Illustrative incident used only for contract validation.",
-  "status": "investigating",
+  "asset_id": "asset-web-001",
+  "timestamp": "2026-10-20T10:05:00Z",
   "severity": "high",
   "confidence": 0.86,
-  "asset_ids": [
-    "asset-web-001"
-  ],
-  "source_event_ids": [
+  "title": "Synthetic suspicious activity against a demo asset",
+  "correlation_id": "corr-demo-001",
+  "event_ids": [
     "evt-demo-001"
   ],
-  "related_finding_ids": [
-    "finding-demo-001"
-  ],
-  "assigned_team": "team-p2",
-  "assigned_to": "analyst-demo",
-  "playbook_id": "triage-web-anomaly-v1",
-  "created_at": "2026-10-20T10:05:00Z",
-  "updated_at": "2026-10-20T10:05:00Z",
-  "audit_ref": "audit://demo/inc-demo-001"
+  "description": "Illustrative incident used for contract validation.",
+  "playbook_ref": "triage-web-anomaly-v1",
+  "status": "open"
 }

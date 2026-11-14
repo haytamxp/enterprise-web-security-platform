@@ -1,16 +1,19 @@
+import os
 import requests
 import json
-import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # L'Indexer écoute sur le port 9200
 INDEXER_URL = "https://192.168.100.52:9200"
-INDEXER_USER = "admin"
-INDEXER_PASS = "admin"
+INDEXER_USER = os.getenv("INDEXER_USER")
+INDEXER_PASS = os.getenv("INDEXER_PASS")
 
 def fetch_alerts_from_indexer(limit=5):
     """Interroge l'Indexer Wazuh pour récupérer les dernières alertes"""
+    if not INDEXER_USER or not INDEXER_PASS:
+        print("INDEXER_USER and INDEXER_PASS environment variables are required.")
+        return []
+
     # On cherche dans les index wazuh-alerts-*, on trie par date décroissante
     url = f"{INDEXER_URL}/wazuh-alerts-*/_search?size={limit}&sort=timestamp:desc"
     
@@ -18,8 +21,8 @@ def fetch_alerts_from_indexer(limit=5):
         response = requests.get(
             url, 
             auth=(INDEXER_USER, INDEXER_PASS), # Authentification basique
-            verify=False
-        )# nosemgrep
+            verify=True
+        )
         
         if response.status_code == 200:
             data = response.json()

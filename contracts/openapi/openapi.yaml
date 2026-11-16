@@ -1,24 +1,39 @@
 openapi: 3.1.0
+
 info:
   title: Enterprise Web Security & Threat Response Platform API
   version: 1.0.0
   description: |
-    Contrat initial proposé. Les routes décrivent l'API cible et ne signifient pas
-    qu'un backend opérationnel est déjà implémenté.
+    Shared HTTP contract for the enterprise security platform.
+
+    Human users authenticate with Bearer JWTs through the login endpoint.
+    Machine-to-machine ingestion uses tenant-scoped connector API keys
+    supplied in the X-Connector-Key header.
+
+    Event ingestion requires the events:ingest connector scope.
+    Incident creation requires the incidents:create connector scope.
+    Connector keys are tenant-bound, expire when configured, and can be
+    revoked. Human Bearer JWTs are not accepted on ingestion endpoints.
+
+    The current backend is a local prototype. Planned endpoints remain
+    explicitly marked as planned and are not implemented yet.
+
 servers:
   - url: http://127.0.0.1:8080
-    description: Développement local uniquement
+    description: Local development only
+
 security:
   - bearerAuth: []
+
 paths:
-  /health:
+  /healthz:
     get:
       operationId: getHealth
-      summary: Vérifier la disponibilité de l'API
+      summary: Check API availability
       security: []
       responses:
         '200':
-          description: API disponible
+          description: API available
           content:
             application/json:
               schema:
@@ -28,20 +43,73 @@ paths:
                   status:
                     type: string
                     const: ok
+
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: Authenticate a human user
+      description: Authenticate an active user and return a short-lived Bearer JWT.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid login request
+        '401':
+          description: Invalid credentials or inactive account
+        '500':
+          description: Login failed
+        '503':
+          description: Authentication unavailable
+
+  /api/v1/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the authenticated user identity
+      description: Returns the user and tenant identity from the verified JWT.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current authenticated identity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserIdentity'
+        '401':
+          description: Missing, invalid, or expired Bearer token
+
   /api/v1/assets:
     get:
       operationId: listAssets
-      summary: Lister les actifs autorisés par le contexte utilisateur
+      summary: List authorized assets
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       parameters:
         - in: query
           name: limit
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
         - in: query
           name: cursor
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
-          description: Page d'actifs
+          description: Page of assets
           content:
             application/json:
               schema:
@@ -50,62 +118,254 @@ paths:
                 properties:
                   items:
                     type: array
-                    items: { $ref: '../json-schema/asset.schema.json' }
+                    items:
+                      $ref: '../json-schema/asset.schema.json'
                   next_cursor:
                     type: [string, 'null']
-        '401': { description: Authentification requise }
-        '403': { description: Permission insuffisante }
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+
   /api/v1/findings:
     post:
       operationId: ingestFinding
-      summary: Soumettre un finding normalisé
-      description: Le serveur doit recalculer ou vérifier les champs sensibles et l'appartenance de l'actif au tenant.
+      summary: Submit a normalized security finding
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '../json-schema/finding.schema.json' }
+            schema:
+              $ref: '../json-schema/finding.schema.json'
       responses:
-        '202': { description: Finding accepté pour traitement }
-        '400': { description: Payload invalide }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
-        '409': { description: Conflit d'idempotence ou de version }
+        '202':
+          description: Finding accepted for processing
+        '400':
+          description: Invalid payload
+        '401':
+          description: Authentication required
+        '403':
+          description: Authorization denied
+        '409':
+          description: Idempotency or version conflict
+
   /api/v1/events:
     post:
       operationId: ingestSecurityEvent
-      summary: Ingérer un événement de sécurité normalisé
+      summary: Ingest a normalized security event
+      description: |
+        Stores a validated event for the tenant associated with the
+        authenticated connector. Requires the events:ingest scope.
+        Human Bearer JWTs are not accepted on this machine-to-machine route.
+      x-implementation-status: implemented-local-prototype
+      security:
+        - connectorKeyAuth: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '../json-schema/security-event.schema.json' }
+            schema:
+              $ref: '../json-schema/security-event.schema.json'
+            example:
+              schema_version: '1.0'
+              event_id: evt-demo-001
+              timestamp: '2026-10-20T10:00:00Z'
+              source_product: suricata
+              event_type: alert
+              asset_id: asset-web-001
+              severity: 3
+              confidence: 0.92
+              correlation_id: null
       responses:
-        '202': { description: Événement accepté }
-        '400': { description: Payload invalide }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
+        '201':
+          description: Event stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventIngestResponse'
+              example:
+                event_id: evt-demo-001
+                stored: true
+        '400':
+          description: Invalid JSON or event contract violation
+        '401':
+          description: Missing, invalid, expired, or revoked connector key
+        '403':
+          description: Connector does not have the events:ingest scope
+        '409':
+          description: Duplicate event_id
+        '500':
+          description: Event could not be stored
+        '503':
+          description: Connector authentication unavailable
+
+  /api/v1/incidents:
+    post:
+      operationId: createIncident
+      summary: Create a security incident
+      description: |
+        Stores an incident and associates existing event IDs belonging to
+        the authenticated connector tenant. New incidents must use status
+        open. Requires the incidents:create scope.
+        Human Bearer JWTs are not accepted on this machine-to-machine route.
+      x-implementation-status: implemented-local-prototype
+      security:
+        - connectorKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../json-schema/incident.schema.json'
+            example:
+              schema_version: '1.0'
+              incident_id: inc-demo-001
+              asset_id: asset-web-001
+              timestamp: '2026-10-20T10:05:00Z'
+              severity: high
+              confidence: 0.86
+              title: Synthetic suspicious activity
+              correlation_id: corr-demo-001
+              event_ids:
+                - evt-demo-001
+              description: Illustrative incident.
+              playbook_ref: triage-web-anomaly-v1
+              status: open
+      responses:
+        '201':
+          description: Incident stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentCreateResponse'
+              example:
+                incident_id: inc-demo-001
+                stored: true
+        '400':
+          description: Invalid JSON or incident contract violation
+        '401':
+          description: Missing, invalid, expired, or revoked connector key
+        '403':
+          description: Connector does not have the incidents:create scope
+        '409':
+          description: Duplicate incident_id
+        '422':
+          description: Referenced event IDs do not exist in the connector tenant
+        '500':
+          description: Incident could not be stored
+        '503':
+          description: Connector authentication unavailable
+
   /api/v1/incidents/{incidentId}:
     get:
       operationId: getIncident
-      summary: Lire un incident dans le périmètre autorisé
+      summary: Read an incident by ID
+      description: Planned endpoint; not implemented in the current backend prototype.
+      x-implementation-status: planned
       parameters:
         - in: path
           name: incidentId
           required: true
-          schema: { type: string }
+          schema:
+            type: string
       responses:
         '200':
-          description: Incident trouvé
+          description: Incident found
           content:
             application/json:
-              schema: { $ref: '../json-schema/incident.schema.json' }
-        '401': { description: Authentification requise }
-        '403': { description: Autorisation refusée }
-        '404': { description: Incident introuvable }
+              schema:
+                $ref: '../json-schema/incident.schema.json'
+        '401':
+          description: Authentication required
+        '403':
+          description: Authorization denied
+        '404':
+          description: Incident not found
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Human-user authentication using a short-lived JWT.
+
+    connectorKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Connector-Key
+      description: Tenant-scoped machine connector key. Required scopes are defined per operation.
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+
+    LoginResponse:
+      type: object
+      required: [access_token, token_type, expires_at, user]
+      properties:
+        access_token:
+          type: string
+          description: Short-lived signed JWT. Treat as a secret.
+        token_type:
+          type: string
+          const: Bearer
+        expires_at:
+          type: string
+          format: date-time
+        user:
+          type: object
+          required: [id, email, role]
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+              enum: [admin, analyst, responder, viewer]
+
+    CurrentUserIdentity:
+      type: object
+      additionalProperties: false
+      required: [user_id, tenant_id, role]
+      properties:
+        user_id:
+          type: string
+        tenant_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [admin, analyst, responder, viewer]
+    EventIngestResponse:
+      type: object
+      additionalProperties: false
+      required: [event_id, stored]
+      properties:
+        event_id:
+          type: string
+        stored:
+          type: boolean
+          const: true
+
+    IncidentCreateResponse:
+      type: object
+      additionalProperties: false
+      required: [incident_id, stored]
+      properties:
+        incident_id:
+          type: string
+        stored:
+          type: boolean
+          const: true

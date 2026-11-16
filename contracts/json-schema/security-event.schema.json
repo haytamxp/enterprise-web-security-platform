@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/ewstrp/contracts/security-event.schema.json",
-  "title": "Normalized Security Event",
+  "title": "Normalized Security Event Ingestion Request",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,8 @@
     "event_type",
     "asset_id",
     "severity",
-    "confidence"
+    "confidence",
+    "correlation_id"
   ],
   "properties": {
     "schema_version": {
@@ -26,127 +27,78 @@
     },
     "timestamp": {
       "type": "string",
-      "format": "date-time"
-    },
-    "observed_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "tenant_id": {
-      "type": "string",
-      "maxLength": 128
+      "format": "date-time",
+      "pattern": "Z$",
+      "description": "RFC3339 timestamp in UTC, ending in uppercase Z."
     },
     "source_product": {
       "type": "string",
       "enum": [
         "wazuh",
         "suricata",
-        "application",
-        "assessment",
-        "platform",
-        "unknown"
+        "application_log"
       ]
-    },
-    "source_event_id": {
-      "type": "string",
-      "maxLength": 256
     },
     "event_type": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 128
+      "enum": [
+        "alert",
+        "flow",
+        "http",
+        "auth_failure",
+        "anomaly"
+      ]
     },
     "asset_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1,
-      "maxLength": 128
+      "maxLength": 128,
+      "description": "Required field; null is allowed when the asset is not identified."
     },
     "severity": {
       "type": "integer",
-      "minimum": 0,
-      "maximum": 10
-    },
-    "severity_label": {
-      "type": "string",
-      "enum": [
-        "critical",
-        "high",
-        "medium",
-        "low",
-        "info",
-        "unknown"
-      ]
+      "minimum": 1,
+      "maximum": 5
     },
     "confidence": {
       "type": "number",
       "minimum": 0,
       "maximum": 1
     },
+    "correlation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 128
+    },
     "src_ip": {
       "anyOf": [
-        {
-          "type": "string",
-          "format": "ipv4"
-        },
-        {
-          "type": "string",
-          "format": "ipv6"
-        }
+        { "type": "string", "format": "ipv4" },
+        { "type": "string", "format": "ipv6" },
+        { "type": "null" }
       ]
     },
     "dest_ip": {
       "anyOf": [
-        {
-          "type": "string",
-          "format": "ipv4"
-        },
-        {
-          "type": "string",
-          "format": "ipv6"
-        }
+        { "type": "string", "format": "ipv4" },
+        { "type": "string", "format": "ipv6" },
+        { "type": "null" }
       ]
     },
-    "protocol": {
-      "type": "string",
-      "maxLength": 32
-    },
     "rule_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "maxLength": 256
     },
-    "rule_name": {
-      "type": "string",
+    "signature": {
+      "type": ["string", "null"],
       "maxLength": 512
     },
-    "correlation_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "maxLength": 128
+    "description": {
+      "type": ["string", "null"]
     },
-    "deduplication_key": {
-      "type": "string",
-      "maxLength": 256
-    },
-    "raw_event_ref": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "maxLength": 512
-    },
-    "attributes": {
-      "type": "object",
-      "additionalProperties": {
-        "type": [
-          "string",
-          "number",
-          "integer",
-          "boolean",
-          "null"
-        ]
-      }
+    "raw_ref": {
+      "type": ["string", "null"],
+      "maxLength": 1024,
+      "description": "Reference to protected evidence; not a raw event dump."
     }
   }
 }

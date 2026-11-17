@@ -1,0 +1,2 @@
+data/CSV[[:space:]]Files/*.csv filter=lfs diff=lfs merge=lfs -text
+data/CSV[[:space:]]Files/Training[[:space:]]and[[:space:]]Testing[[:space:]]Sets/*.csv filter=lfs diff=lfs merge=lfs -text

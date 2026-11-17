@@ -1,0 +1,15 @@
+title = "EWSTRP Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow only the synthetic token used by the audit-redaction test."
+condition = "AND"
+regexTarget = "secret"
+paths = [
+  '''^tests/security/test_scan_orchestrator\.py$'''
+]
+regexes = [
+  '''^not-for-audit$'''
+]

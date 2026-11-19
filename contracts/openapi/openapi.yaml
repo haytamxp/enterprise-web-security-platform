@@ -153,6 +153,7 @@ paths:
 
   /api/v1/events:
     post:
+      x-required-connector-scope: events:ingest
       operationId: ingestSecurityEvent
       summary: Ingest a normalized security event
       description: |

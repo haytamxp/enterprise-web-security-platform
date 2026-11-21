@@ -1,105 +1,47 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
-	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/auth"
-	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/httpapi"
-	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/storage"
+	"github.com/joho/godotenv"
+
+	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/api"
+	"github.com/haytamxp/enterprise-web-security-platform/backend/internal/database"
 )
 
+// @title           Orchid WebShield P3 API
+// @version         1.0
+// @description     Security API pour la plateforme Orchid WebShield.
+// @host            localhost:8080
+// @BasePath        /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Tapez "Bearer " suivi de votre token JWT.
 func main() {
-	logger := log.New(os.Stdout, "ewstrp-api ", log.LstdFlags|log.LUTC)
+	// 1. Charger les variables d'environnement
+	_ = godotenv.Load("../.env")
+	_ = godotenv.Load("../../.env")
 
-	if err := run(logger); err != nil {
-		logger.Fatal(err)
+	// 2. Connexion à la base de données
+	if err := database.Connect(); err != nil {
+		log.Fatalf("Erreur fatale DB: %v", err)
 	}
-}
+	log.Println("✅ Connecté à PostgreSQL")
 
-func run(logger *log.Logger) error {
+	// 3. Configuration du serveur HTTP
+	router := api.NewRouter()
 	addr := os.Getenv("HTTP_ADDR")
-
 	if addr == "" {
 		addr = "127.0.0.1:8080"
 	}
 
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-	defer stop()
+	log.Printf("🚀 Serveur démarré sur http://%s", addr)
+	log.Printf("📚 Swagger UI: http://%s/swagger/index.html", addr)
 
-	databaseURL := os.Getenv("DATABASE_URL")
-
-	store, err := storage.Open(ctx, databaseURL)
-	if err != nil {
-		return fmt.Errorf("database initialization failed: %w", err)
+	if err := http.ListenAndServe(addr, router); err != nil {
+		log.Fatalf("Erreur serveur: %v", err)
 	}
-	defer store.DB.Close()
-
-	issuer := strings.TrimSpace(os.Getenv("JWT_ISSUER"))
-	if issuer == "" {
-		issuer = "ewstrp-api"
-	}
-
-	tokenManager, err := auth.NewTokenManager(
-		os.Getenv("JWT_SECRET"),
-		issuer,
-		15*time.Minute,
-	)
-	if err != nil {
-		return fmt.Errorf("JWT initialization failed: %w", err)
-	}
-
-	server := &http.Server{
-		Addr:              addr,
-		Handler:           httpapi.NewWithAuth(store, tokenManager),
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       15 * time.Second,
-		WriteTimeout:      15 * time.Second,
-		IdleTimeout:       60 * time.Second,
-	}
-
-	errCh := make(chan error, 1)
-
-	go func() {
-		logger.Printf("Starting API on %s", addr)
-		errCh <- server.ListenAndServe()
-	}()
-
-	select {
-	case err := <-errCh:
-		if !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("HTTP server: %w", err)
-		}
-
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(),
-			10*time.Second,
-		)
-		defer cancel()
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Printf("Graceful shutdown failed: %v", err)
-
-			if closeErr := server.Close(); closeErr != nil {
-				return errors.Join(err, closeErr)
-			}
-
-			return err
-		}
-	}
-
-	return nil
 }

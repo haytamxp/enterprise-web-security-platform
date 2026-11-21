@@ -1,12 +1,13 @@
+
 import os
 import requests
 import json
 
-
 # L'Indexer écoute sur le port 9200
-INDEXER_URL = "https://192.168.100.52:9200"
+INDEXER_URL = "https://192.168.100.57:9200"
 INDEXER_USER = os.getenv("INDEXER_USER")
 INDEXER_PASS = os.getenv("INDEXER_PASS")
+
 
 def fetch_alerts_from_indexer(limit=5):
     """Interroge l'Indexer Wazuh pour récupérer les dernières alertes"""
@@ -16,18 +17,17 @@ def fetch_alerts_from_indexer(limit=5):
 
     # On cherche dans les index wazuh-alerts-*, on trie par date décroissante
     url = f"{INDEXER_URL}/wazuh-alerts-*/_search?size={limit}&sort=timestamp:desc"
-    
+
     try:
         response = requests.get(
-            url, 
-            auth=(INDEXER_USER, INDEXER_PASS), # Authentification basique
+            url,
+            auth=(INDEXER_USER, INDEXER_PASS),
             verify=True
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             hits = data.get('hits', {}).get('hits', [])
-            # On extrait le champ _source qui contient la vraie alerte
             return [hit['_source'] for hit in hits]
         else:
             print(f"Erreur Indexer ({response.status_code}): {response.text}")
@@ -36,10 +36,11 @@ def fetch_alerts_from_indexer(limit=5):
         print(f"Erreur de connexion à l'Indexer: {e}")
         return []
 
+
 if __name__ == "__main__":
     print("Récupération des alertes depuis l'Indexer Wazuh...")
     alerts = fetch_alerts_from_indexer()
-    
+
     print(f"{len(alerts)} alertes trouvées.\n")
     for alert in alerts:
         rule = alert.get('rule', {})

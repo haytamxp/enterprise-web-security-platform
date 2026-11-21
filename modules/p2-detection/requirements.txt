@@ -8,3 +8,6 @@ langchain-qdrant
 langchain-google-genai
 qdrant-client
 python-dotenv
+pandas
+scikit-learn
+joblib

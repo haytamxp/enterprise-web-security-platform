@@ -59,3 +59,9 @@ Thumbs.db
 *.tar
 *.tar.gz
 *.zip
+
+# Modèles de Machine Learning (trop lourds pour Git)
+*.joblib
+*.pkl
+*.h5
+

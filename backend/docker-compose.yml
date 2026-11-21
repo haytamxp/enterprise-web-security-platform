@@ -1,0 +1,20 @@
+﻿services:
+  postgres-p3:
+    image: postgres:17
+    container_name: p3-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ewstrp
+    ports:
+      - "5433:5432"
+    volumes:
+      - p3_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ewstrp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  p3_pgdata:

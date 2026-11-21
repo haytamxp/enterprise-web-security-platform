@@ -1,0 +1,106 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: Security API pour la plateforme Orchid WebShield.
+  title: Orchid WebShield P3 API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authentifie un utilisateur et retourne un token JWT
+      parameters:
+      - description: Email et mot de passe
+        in: body
+        name: credentials
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Identifiants invalides
+          schema:
+            type: string
+      summary: Connexion utilisateur
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Crée un nouvel utilisateur dans la base de données
+      parameters:
+      - description: Email, mot de passe et rôle (admin/analyst)
+        in: body
+        name: credentials
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Données invalides
+          schema:
+            type: string
+      summary: Inscription utilisateur
+      tags:
+      - Auth
+  /incidents:
+    post:
+      consumes:
+      - application/json
+      description: Reçoit un incident envoyé par le module P2 et le stocke en base
+      parameters:
+      - description: Incident P2
+        in: body
+        name: incident
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: JSON invalide
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Ingestion d'incident P2
+      tags:
+      - Ingestion
+securityDefinitions:
+  BearerAuth:
+    description: Tapez "Bearer " suivi de votre token JWT.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

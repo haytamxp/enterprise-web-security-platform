@@ -21,10 +21,17 @@ func NewRouter() http.Handler {
 
 	// 3. Authentification (Publique)
 	mux.HandleFunc("POST /api/v1/auth/login", LoginHandler)
-    mux.HandleFunc("POST /api/v1/auth/register", RegisterHandler)
+	mux.HandleFunc("POST /api/v1/auth/register", AuthMiddleware(RegisterHandler))
 	// 4. Ingestion P2 (Protégée par Token JWT)
 	// On enveloppe le handler avec AuthMiddleware
 	mux.HandleFunc("POST /api/v1/incidents", AuthMiddleware(CreateIncidentHandler))
-
+	mux.HandleFunc("GET /api/v1/incidents", AuthMiddleware(ListIncidentsHandler))
+	mux.HandleFunc("GET /api/v1/incidents/{id}", AuthMiddleware(GetIncidentHandler))
+	// Assets: protected by human JWT authentication
+	mux.HandleFunc("POST /api/v1/assets", AuthMiddleware(CreateAssetHandler))
+	mux.HandleFunc("GET /api/v1/assets", AuthMiddleware(ListAssetsHandler))
+	mux.HandleFunc("GET /api/v1/assets/{id}", AuthMiddleware(GetAssetHandler))
+	mux.HandleFunc("PUT /api/v1/assets/{id}", AuthMiddleware(UpdateAssetHandler))
+	mux.HandleFunc("DELETE /api/v1/assets/{id}", AuthMiddleware(DeleteAssetHandler))
 	return CorsMiddleware(mux)
 }

@@ -1,4 +1,107 @@
 basePath: /api/v1
+definitions:
+  api.AssetAuthorization:
+    properties:
+      allowed_targets:
+        items:
+          type: string
+        type: array
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+      excluded_targets:
+        items:
+          type: string
+        type: array
+      expires_at:
+        type: string
+      rules_of_engagement_ref:
+        type: string
+      status:
+        type: string
+    type: object
+  api.AssetRequest:
+    properties:
+      asset_id:
+        type: string
+      asset_type:
+        type: string
+      authorization:
+        $ref: '#/definitions/api.AssetAuthorization'
+      criticality:
+        type: string
+      environment:
+        type: string
+      name:
+        type: string
+      owner_team:
+        type: string
+      schema_version:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tenant_id:
+        type: string
+    type: object
+  api.AssetResponse:
+    properties:
+      asset_id:
+        type: string
+      asset_type:
+        type: string
+      authorization:
+        $ref: '#/definitions/api.AssetAuthorization'
+      created_at:
+        type: string
+      criticality:
+        type: string
+      environment:
+        type: string
+      name:
+        type: string
+      owner_team:
+        type: string
+      schema_version:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api.incidentResponse:
+    properties:
+      asset_id:
+        type: string
+      confidence:
+        type: number
+      correlation_id:
+        type: string
+      description:
+        type: string
+      incident_id:
+        type: string
+      occurred_at:
+        type: string
+      playbook_ref:
+        type: string
+      received_at:
+        type: string
+      schema_version:
+        type: string
+      severity:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -6,13 +109,194 @@ info:
   title: Orchid WebShield P3 API
   version: "1.0"
 paths:
+  /assets:
+    get:
+      description: Returns paginated assets belonging to the authenticated tenant
+      parameters:
+      - description: Maximum results (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Results to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by asset type
+        in: query
+        name: asset_type
+        type: string
+      - description: Filter by environment
+        in: query
+        name: environment
+        type: string
+      - description: Filter by criticality
+        in: query
+        name: criticality
+        type: string
+      - description: Filter by authorization status
+        in: query
+        name: auth_status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List assets
+      tags:
+      - Assets
+    post:
+      consumes:
+      - application/json
+      description: Registers an asset and its authorization scope in the administrator's
+        tenant
+      parameters:
+      - description: Asset information and authorization
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/api.AssetRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.AssetResponse'
+        "400":
+          description: Invalid asset
+          schema:
+            type: string
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+        "403":
+          description: Administrator access required
+          schema:
+            type: string
+        "409":
+          description: Asset already exists
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create asset
+      tags:
+      - Assets
+  /assets/{id}:
+    delete:
+      description: Deletes an asset from the authenticated tenant when it is not referenced
+        by findings
+      parameters:
+      - description: Asset ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Administrator access required
+          schema:
+            type: string
+        "404":
+          description: Asset not found
+          schema:
+            type: string
+        "409":
+          description: Asset is referenced by findings
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete asset
+      tags:
+      - Assets
+    get:
+      description: Retrieves one asset by its public asset ID
+      parameters:
+      - description: Asset ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.AssetResponse'
+        "404":
+          description: Asset not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get asset
+      tags:
+      - Assets
+    put:
+      consumes:
+      - application/json
+      description: Updates an asset without changing its tenant or public asset ID
+      parameters:
+      - description: Asset ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated asset information
+        in: body
+        name: asset
+        required: true
+        schema:
+          $ref: '#/definitions/api.AssetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.AssetResponse'
+        "400":
+          description: Invalid asset
+          schema:
+            type: string
+        "403":
+          description: Administrator access required
+          schema:
+            type: string
+        "404":
+          description: Asset not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update asset
+      tags:
+      - Assets
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Authentifie un utilisateur et retourne un token JWT
+      description: Authenticates a user and returns a JWT token
       parameters:
-      - description: Email et mot de passe
+      - description: Email and password
         in: body
         name: credentials
         required: true
@@ -30,19 +314,19 @@ paths:
               type: string
             type: object
         "401":
-          description: Identifiants invalides
+          description: Invalid credentials
           schema:
             type: string
-      summary: Connexion utilisateur
+      summary: User login
       tags:
       - Auth
   /auth/register:
     post:
       consumes:
       - application/json
-      description: Crée un nouvel utilisateur dans la base de données
+      description: Allows a tenant administrator to create an analyst account
       parameters:
-      - description: Email, mot de passe et rôle (admin/analyst)
+      - description: Email and password
         in: body
         name: credentials
         required: true
@@ -60,19 +344,77 @@ paths:
               type: string
             type: object
         "400":
-          description: Données invalides
+          description: Invalid data
           schema:
             type: string
-      summary: Inscription utilisateur
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+        "403":
+          description: Administrator access required
+          schema:
+            type: string
+        "409":
+          description: Email already exists
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Register user
       tags:
       - Auth
   /incidents:
+    get:
+      description: Returns paginated incidents belonging to the authenticated tenant
+      parameters:
+      - description: Number of results (1-100, default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of results to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by severity
+        in: query
+        name: severity
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by asset
+        in: query
+        name: asset_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid pagination parameters
+          schema:
+            type: string
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List incidents
+      tags:
+      - Incidents
     post:
       consumes:
       - application/json
-      description: Reçoit un incident envoyé par le module P2 et le stocke en base
+      description: Receives an incident and stores it in the authenticated tenant
       parameters:
-      - description: Incident P2
+      - description: P2 incident
         in: body
         name: incident
         required: true
@@ -89,14 +431,43 @@ paths:
               type: string
             type: object
         "400":
-          description: JSON invalide
+          description: Invalid JSON or missing data
           schema:
             type: string
       security:
       - BearerAuth: []
-      summary: Ingestion d'incident P2
+      summary: Incident ingestion
       tags:
-      - Ingestion
+      - Incidents
+  /incidents/{id}:
+    get:
+      description: Returns an incident by its public incident ID
+      parameters:
+      - description: Public incident ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.incidentResponse'
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+        "404":
+          description: Incident not found
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get incident
+      tags:
+      - Incidents
 securityDefinitions:
   BearerAuth:
     description: Tapez "Bearer " suivi de votre token JWT.

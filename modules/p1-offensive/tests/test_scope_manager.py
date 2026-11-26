@@ -153,6 +153,13 @@ CAS = [
         WHITELIST_AVEC_OPTIONS,
         attendu=True,
     ),
+        Cas(
+        "piege6d_prefixe_similaire_non_exclu",
+        "Piège 6d — chemin ayant un préfixe similaire, mais non exclu",
+        "https://orchidisland.immo/paiementXYZ",
+        WHITELIST_AVEC_OPTIONS,
+        attendu=True,
+    ),
     Cas(
         "date_hors_fenetre",
         "Date — hors fenêtre d'autorisation (dans le futur)",

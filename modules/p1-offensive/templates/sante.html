@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Santé de la cible — Dashboard P1</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 60px auto; color: #1a1a1a; }
+    nav a { margin-right: 16px; }
+    .carte { margin-top: 16px; padding: 16px; border: 1px solid #ddd; border-radius: 6px; }
+    .bandeau { margin-top: 16px; padding: 12px 16px; background: #fef7e0; border: 1px solid #f9d77e; border-radius: 6px; color: #5f4b00; }
+    label { display: inline-block; margin-right: 16px; margin-bottom: 8px; }
+    select, input[type=number] { padding: 4px; }
+    button { padding: 6px 14px; margin-right: 8px; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .message { margin-top: 8px; color: #d93025; min-height: 1.2em; }
+    .badge { display: inline-block; padding: 8px 20px; border-radius: 20px; font-size: 1.4em; font-weight: bold; }
+    .etat-aucun { background: #f1f3f4; color: #5f6368; }
+    .etat-normal { background: #e6f4ea; color: #137333; }
+    .etat-degrade { background: #fef0cd; color: #b06000; }
+    .etat-critique { background: #fce8e6; color: #c5221f; }
+    .compteurs { display: flex; gap: 32px; margin: 12px 0; }
+    .compteurs div span { display: block; font-size: 1.5em; font-weight: bold; }
+    progress { width: 100%; height: 14px; }
+    .defilement { max-height: 420px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+    th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #eee; }
+    th { position: sticky; top: 0; background: #f8f9fa; }
+    td.etat-normal, td.etat-degrade, td.etat-critique { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">Accueil</a>
+    <a href="/scan-results">Scan Results</a>
+    <a href="/hypotheses">Hypothèses à trier</a>
+    <a href="/sante">Santé du scan</a>
+  </nav>
+
+  <h1>Santé de la cible en direct</h1>
+  <p>Suivi en temps réel de l'état vu par le Circuit Breaker : <strong>NORMAL</strong> (on continue), <strong>DÉGRADÉ</strong> (on ralentit), <strong>CRITIQUE</strong> (on arrête et on surveille).</p>
+
+  <div class="bandeau">⚠️ Simulation uniquement : aucune requête réelle n'est envoyée à une cible.</div>
+
+  <form id="formulaire" class="carte">
+    <label>Scénario
+      <select name="scenario" id="scenario">
+        {% for s in scenarios %}
+          <option value="{{ s.nom }}">{{ s.nom }} — {{ s.description }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Requêtes de scan
+      <input type="number" name="requetes" value="40" min="1" max="{{ nb_requetes_max }}">
+    </label>
+    <br>
+    <button type="submit" id="btn-lancer">Lancer la simulation</button>
+    <button type="button" id="btn-arreter" disabled>Arrêter</button>
+    <div id="message" class="message" role="alert"></div>
+  </form>
+
+  <div class="carte">
+    <div id="badge" class="badge etat-aucun">—</div>
+    <p id="statut">Aucune simulation lancée.</p>
+    <p id="raison"></p>
+    <div class="compteurs">
+      <div>Requêtes de scan <span id="c-requetes">0</span></div>
+      <div>Sondes de santé <span id="c-sondes">0</span></div>
+      <div>Durée simulée <span id="c-duree">0.0 min</span></div>
+    </div>
+    <progress id="progression" value="0" max="1"></progress>
+  </div>
+
+  <h2>Journal des événements</h2>
+  <div class="defilement">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Type</th><th>Mesure</th><th>État</th><th>Raison</th></tr>
+      </thead>
+      <tbody id="journal"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const ICONES = { normal: "🟢", degrade: "🟠", critique: "🔴" };
+    const LIBELLES_ETAT = { normal: "NORMAL", degrade: "DÉGRADÉ", critique: "CRITIQUE" };
+    const LIBELLES_GENRE = { requete: "requête", sonde: "sonde", abandon: "ABANDON" };
+    const LIBELLES_STATUT = {
+      inactif: "Aucune simulation lancée.",
+      en_cours: "Simulation en cours…",
+      termine: "Simulation terminée.",
+      abandonne: "Scan ABANDONNÉ : la cible ne s'est pas rétablie (fail-closed).",
+      arrete: "Simulation arrêtée manuellement.",
+      erreur: "Erreur pendant la simulation."
+    };
+
+    const formulaire = document.getElementById("formulaire");
+    const btnLancer = document.getElementById("btn-lancer");
+    const btnArreter = document.getElementById("btn-arreter");
+    const message = document.getElementById("message");
+
+    function decrireMesure(ev) {
+      if (ev.genre === "abandon") return "—";
+      if (ev.injoignable) return "INJOIGNABLE";
+      let m = Math.round(ev.temps_reponse_ms) + " ms";
+      if (ev.erreur_5xx) m += " +5xx";
+      return m;
+    }
+
+    function ajouterCellule(ligne, texte, classe) {
+      const td = document.createElement("td");
+      td.textContent = texte;           // textContent : jamais d'HTML injecté depuis les données
+      if (classe) td.className = classe;
+      ligne.appendChild(td);
+    }
+
+    function afficher(s) {
+      const badge = document.getElementById("badge");
+      if (s.etat) {
+        badge.className = "badge etat-" + s.etat;
+        badge.textContent = ICONES[s.etat] + " " + LIBELLES_ETAT[s.etat];
+      } else {
+        badge.className = "badge etat-aucun";
+        badge.textContent = "—";
+      }
+
+      let statut = LIBELLES_STATUT[s.statut] || s.statut;
+      if (s.scenario) statut += " (scénario : " + s.scenario + ")";
+      if (s.message_erreur) statut += " " + s.message_erreur;
+      document.getElementById("statut").textContent = statut;
+      document.getElementById("raison").textContent = s.raison;
+
+      document.getElementById("c-requetes").textContent = s.requetes_envoyees + " / " + s.nb_requetes;
+      document.getElementById("c-sondes").textContent = s.sondes_envoyees;
+      document.getElementById("c-duree").textContent = (s.temps_virtuel_s / 60).toFixed(1) + " min";
+
+      const progression = document.getElementById("progression");
+      progression.max = Math.max(s.nb_requetes, 1);
+      progression.value = s.requetes_envoyees;
+
+      const enCours = s.statut === "en_cours";
+      btnLancer.disabled = enCours;
+      btnArreter.disabled = !enCours;
+
+      // Journal : événement le plus récent en haut
+      const corps = document.getElementById("journal");
+      corps.replaceChildren();
+      for (const ev of [...s.evenements].reverse()) {
+        const ligne = document.createElement("tr");
+        ajouterCellule(ligne, ev.numero);
+        ajouterCellule(ligne, LIBELLES_GENRE[ev.genre] || ev.genre);
+        ajouterCellule(ligne, decrireMesure(ev));
+        ajouterCellule(ligne, ICONES[ev.etat] + " " + LIBELLES_ETAT[ev.etat], "etat-" + ev.etat);
+        ajouterCellule(ligne, ev.raison);
+        corps.appendChild(ligne);
+      }
+    }
+
+    async function rafraichir() {
+      try {
+        const reponse = await fetch("/sante/etat", { cache: "no-store" });
+        afficher(await reponse.json());
+      } catch (e) {
+        message.textContent = "Connexion au serveur perdue…";
+      }
+    }
+
+    formulaire.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+      const reponse = await fetch("/sante/lancer", { method: "POST", body: new FormData(formulaire) });
+      const donnees = await reponse.json();
+      if (!reponse.ok) message.textContent = donnees.erreur;
+      rafraichir();
+    });
+
+    btnArreter.addEventListener("click", async () => {
+      await fetch("/sante/arreter", { method: "POST" });
+      rafraichir();
+    });
+
+    rafraichir();
+    setInterval(rafraichir, 1000);
+  </script>
+</body>
+</html>

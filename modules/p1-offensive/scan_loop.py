@@ -1,53 +1,42 @@
+
 #!/usr/bin/env python3
 """
-Boucle de scan pilotée par le Circuit Breaker — sous-étape 2.6.
+Boucle de scan contrôlée par le Circuit Breaker.
 
-Pourquoi ce fichier existe : le Circuit Breaker (circuit_breaker.py) sait
-JUGER la santé de la cible, mais il n'agit pas. Ici on construit la boucle
-qui lui OBÉIT : envoyer une requête, la lui montrer, lire sa décision,
-puis agir en conséquence.
-
-    NORMAL   -> on continue au rythme de base
-    DEGRADE  -> on double le délai entre les requêtes
-    CRITIQUE -> on arrête le scan et on passe en "mode sondes" : de petites
-                requêtes de santé espacées, uniquement pour savoir si le
-                site se rétablit. Si la cible ne se rétablit pas après
-                `max_sondes` sondes, on ABANDONNE (fail-closed).
-
-Choix de conception :
-- La boucle ne sait PAS si les requêtes sont réelles ou simulées : elle
-  reçoit une fonction `envoyer(est_sonde) -> ResultatRequete`. Plus tard, on
-  lui donnera la vraie fonction HTTP (qui devra passer par le Scope Manager
-  avant la moindre requête) sans toucher à cette boucle.
-- Les pauses sont VIRTUELLES : on les additionne dans `temps_virtuel_s`
-  sans vraiment attendre, pour pouvoir simuler 40 requêtes en une seconde.
-- La boucle renvoie un journal d'événements, réutilisable par le dashboard
-  (2.7) et la journalisation des incidents (2.8).
+NORMAL   : rythme normal.
+DEGRADE  : délai multiplié par deux.
+CRITIQUE : arrêt du scan normal et passage en mode sondes.
 """
 
 from __future__ import annotations
 
+import math
+import time
+
 from dataclasses import dataclass, field
 from typing import Callable
 
-from circuit_breaker import CircuitBreaker, Etat, ResultatRequete
+from circuit_breaker import (
+    CircuitBreaker,
+    Etat,
+    ResultatRequete,
+)
 
-DELAI_BASE_S = 3.0     # pause normale entre deux requêtes (comme baseline_scan.py)
-DELAI_SONDE_S = 30.0   # pause entre deux sondes de santé en état CRITIQUE
-MAX_SONDES = 10        # sondes max par crise avant d'abandonner
+
+DELAI_BASE_S = 3.0
+DELAI_SONDE_S = 30.0
+MAX_SONDES = 10
 
 
 @dataclass
 class EvenementScan:
-    """Une ligne du journal : ce qui s'est passé, et ce que le breaker en a conclu."""
-
-    numero: int                          # ordre dans le journal (1, 2, 3...)
-    genre: str                           # "requete" | "sonde" | "abandon"
-    resultat: ResultatRequete | None     # None pour "abandon"
-    etat: Etat                           # état du breaker APRÈS cet événement
-    raison: str                          # explication fournie par le breaker
-    delai_avant_suivante_s: float        # pause appliquée avant l'action suivante
-    temps_virtuel_s: float               # moment (virtuel) où l'événement a eu lieu
+    numero: int
+    genre: str
+    resultat: ResultatRequete | None
+    etat: Etat
+    raison: str
+    delai_avant_suivante_s: float
+    temps_virtuel_s: float
 
 
 @dataclass
@@ -68,26 +57,41 @@ def executer_scan(
     delai_sonde_s: float = DELAI_SONDE_S,
     max_sondes: int = MAX_SONDES,
     sur_evenement: Callable[[EvenementScan], None] | None = None,
+    attendre_reellement: bool = False,
 ) -> ResumeScan:
-    """
-    Exécute `nb_requetes` requêtes de scan en obéissant au Circuit Breaker.
 
-    `envoyer(est_sonde)` envoie UNE requête (de scan si False, de sonde de
-    santé si True) et renvoie son ResultatRequete.
-    `sur_evenement` (optionnel) est appelé à chaque événement, au moment où
-    il se produit : utile pour afficher en direct.
-    """
-    # Fail-closed : une configuration absurde échoue bruyamment.
-    if nb_requetes < 1:
-        raise ValueError("nb_requetes doit être au moins 1")
-    if max_sondes < 1:
-        raise ValueError("max_sondes doit être au moins 1")
-    if delai_base_s < 0 or delai_sonde_s < 0:
-        raise ValueError("les délais ne peuvent pas être négatifs")
+    if (
+        isinstance(nb_requetes, bool)
+        or not isinstance(nb_requetes, int)
+        or nb_requetes < 1
+    ):
+        raise ValueError("nb_requetes doit être un entier positif")
+
+    if (
+        isinstance(max_sondes, bool)
+        or not isinstance(max_sondes, int)
+        or max_sondes < 1
+    ):
+        raise ValueError("max_sondes doit être un entier positif")
+
+    if (
+        not math.isfinite(delai_base_s)
+        or not math.isfinite(delai_sonde_s)
+        or delai_base_s < 0
+        or delai_sonde_s < 0
+    ):
+        raise ValueError("Les délais doivent être finis et positifs")
 
     resume = ResumeScan()
 
-    def noter(genre: str, resultat: ResultatRequete | None, etat: Etat, raison: str, delai: float) -> None:
+    def noter(
+        genre: str,
+        resultat: ResultatRequete | None,
+        etat: Etat,
+        raison: str,
+        delai: float,
+    ) -> None:
+
         evenement = EvenementScan(
             numero=len(resume.evenements) + 1,
             genre=genre,
@@ -97,54 +101,112 @@ def executer_scan(
             delai_avant_suivante_s=delai,
             temps_virtuel_s=resume.temps_virtuel_s,
         )
+
         resume.evenements.append(evenement)
-        resume.temps_virtuel_s += delai  # pause "virtuelle" : on la compte sans attendre
+
         if sur_evenement is not None:
             sur_evenement(evenement)
 
+        resume.temps_virtuel_s += delai
+
+        if attendre_reellement and delai > 0:
+            time.sleep(delai)
+
     for i in range(1, nb_requetes + 1):
+
         derniere = i == nb_requetes
 
+        # Une requête normale ne doit jamais contourner
+        # un Circuit Breaker critique.
+        if breaker.etat() == Etat.CRITIQUE:
+            resume.abandonne = True
+            resume.raison_arret = (
+                "Requête normale bloquée : état critique."
+            )
+            noter(
+                "abandon",
+                None,
+                Etat.CRITIQUE,
+                resume.raison_arret,
+                0.0,
+            )
+            return resume
+
         resultat = envoyer(False)
+
+        if not isinstance(resultat, ResultatRequete):
+            raise TypeError(
+                "La fonction envoyer doit retourner ResultatRequete"
+            )
+
         etat = breaker.enregistrer_resultat(resultat)
         resume.requetes_envoyees += 1
 
         if derniere:
             delai = 0.0
         elif etat == Etat.CRITIQUE:
-            delai = delai_sonde_s  # la prochaine action sera une sonde
+            delai = delai_sonde_s
         else:
-            delai = delai_base_s * breaker.facteur_ralentissement()
+            delai = (
+                delai_base_s * breaker.facteur_ralentissement()
+            )
 
-        noter("requete", resultat, etat, breaker.raison(), delai)
+        noter(
+            "requete",
+            resultat,
+            etat,
+            breaker.raison(),
+            delai,
+        )
 
         if etat != Etat.CRITIQUE or derniere:
             continue
 
-        # --- Mode sondes : le scan est arrêté, on surveille la reprise ----
         sondes_crise = 0
+
         while breaker.etat() == Etat.CRITIQUE:
+
             if sondes_crise >= max_sondes:
                 resume.abandonne = True
                 resume.raison_arret = (
-                    f"Cible toujours en état critique après {max_sondes} sondes de santé : "
-                    f"scan abandonné (fail-closed)"
+                f"Cible toujours critique après "
+                f"{max_sondes} sondes : scan abandonné (fail-closed)."
+            )
+
+                noter(
+                    "abandon",
+                    None,
+                    Etat.CRITIQUE,
+                    resume.raison_arret,
+                    0.0,
                 )
-                noter("abandon", None, Etat.CRITIQUE, resume.raison_arret, 0.0)
                 return resume
 
             sondes_crise += 1
+
             resultat = envoyer(True)
+
+            if not isinstance(resultat, ResultatRequete):
+                raise TypeError(
+                    "La fonction envoyer doit retourner ResultatRequete"
+                )
+
             etat = breaker.enregistrer_resultat(resultat)
             resume.sondes_envoyees += 1
 
             if etat == Etat.CRITIQUE:
                 delai = delai_sonde_s
             else:
-                # La cible se rétablit : prochaine action = requête de scan,
-                # avec le délai correspondant à l'état actuel (DEGRADE = x2).
-                delai = delai_base_s * breaker.facteur_ralentissement()
+                delai = (
+                    delai_base_s * breaker.facteur_ralentissement()
+                )
 
-            noter("sonde", resultat, etat, breaker.raison(), delai)
+            noter(
+                "sonde",
+                resultat,
+                etat,
+                breaker.raison(),
+                delai,
+            )
 
     return resume

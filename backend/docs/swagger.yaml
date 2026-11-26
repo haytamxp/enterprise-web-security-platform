@@ -75,6 +75,211 @@ definitions:
       updated_at:
         type: string
     type: object
+  api.eventListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api.eventResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/api.eventPagination'
+    type: object
+  api.eventPagination:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  api.eventResponse:
+    properties:
+      asset_id:
+        type: string
+      confidence:
+        type: number
+      correlation_id:
+        type: string
+      description:
+        type: string
+      dest_ip:
+        type: string
+      event_id:
+        type: string
+      event_type:
+        type: string
+      occurred_at:
+        type: string
+      raw_ref:
+        type: string
+      received_at:
+        type: string
+      rule_id:
+        type: string
+      schema_version:
+        type: string
+      severity:
+        type: integer
+      signature:
+        type: string
+      source_product:
+        type: string
+      src_ip:
+        type: string
+    type: object
+  api.findingCreateRequest:
+    properties:
+      asset_id:
+        type: string
+      confidence:
+        type: number
+      cvss_score:
+        type: number
+      cvss_vector:
+        type: string
+      cvss_version:
+        type: string
+      cwe_ids:
+        items:
+          type: string
+        type: array
+      deduplication_key:
+        type: string
+      description:
+        type: string
+      detected_at:
+        type: string
+      evidence_refs:
+        items:
+          type: string
+        type: array
+      finding_id:
+        type: string
+      last_observed_at:
+        type: string
+      references:
+        items:
+          type: string
+        type: array
+      references_to_incidents:
+        items:
+          type: string
+        type: array
+      remediation_guidance:
+        type: string
+      schema_version:
+        type: string
+      severity:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  api.findingListResponse:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/api.findingResponse'
+        type: array
+      next_before_id:
+        type: string
+    type: object
+  api.findingResponse:
+    properties:
+      asset_id:
+        type: string
+      confidence:
+        type: number
+      created_at:
+        type: string
+      cvss_score:
+        type: number
+      cvss_vector:
+        type: string
+      cvss_version:
+        type: string
+      cwe_ids:
+        items:
+          type: string
+        type: array
+      deduplication_key:
+        type: string
+      description:
+        type: string
+      detected_at:
+        type: string
+      evidence_refs:
+        items:
+          type: string
+        type: array
+      finding_id:
+        type: string
+      id:
+        type: integer
+      last_observed_at:
+        type: string
+      references:
+        items:
+          type: string
+        type: array
+      references_to_incidents:
+        items:
+          type: string
+        type: array
+      remediation_guidance:
+        type: string
+      schema_version:
+        type: string
+      severity:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api.findingUpdateRequest:
+    properties:
+      confidence:
+        type: number
+      cwe_ids:
+        items:
+          type: string
+        type: array
+      deduplication_key:
+        type: string
+      description:
+        type: string
+      evidence_refs:
+        items:
+          type: string
+        type: array
+      last_observed_at:
+        type: string
+      references:
+        items:
+          type: string
+        type: array
+      references_to_incidents:
+        items:
+          type: string
+        type: array
+      remediation_guidance:
+        type: string
+      severity:
+        type: string
+      status:
+        type: string
+    type: object
   api.incidentResponse:
     properties:
       asset_id:
@@ -100,6 +305,35 @@ definitions:
       status:
         type: string
       title:
+        type: string
+    type: object
+  api.remediationTaskResponse:
+    properties:
+      assigned_to:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      due_at:
+        type: string
+      finding_id:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: string
+      remediation_id:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
         type: string
     type: object
 host: localhost:8080
@@ -364,6 +598,296 @@ paths:
       summary: Register user
       tags:
       - Auth
+  /events:
+    get:
+      description: Returns paginated security events belonging to the authenticated
+        user's tenant
+      parameters:
+      - description: Number of events (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Number of events to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Severity (1-5)
+        in: query
+        name: severity
+        type: integer
+      - description: Event source
+        in: query
+        name: source_product
+        type: string
+      - description: Event type
+        in: query
+        name: event_type
+        type: string
+      - description: Asset identifier
+        in: query
+        name: asset_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.eventListResponse'
+        "400":
+          description: Invalid query parameters
+          schema:
+            type: string
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+        "500":
+          description: Could not retrieve events
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: List security events
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: Receives security events from an authenticated connector
+      parameters:
+      - description: 'Connector credentials: Connector <key_id>.<secret>'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Security event
+        in: body
+        name: event
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid event
+          schema:
+            type: string
+        "401":
+          description: Invalid connector credentials
+          schema:
+            type: string
+        "403":
+          description: Missing connector scope
+          schema:
+            type: string
+        "409":
+          description: Duplicate event
+          schema:
+            type: string
+      summary: Event ingestion
+      tags:
+      - Events
+  /events/{event_id}:
+    get:
+      description: Returns an event by its public event ID, restricted to the authenticated
+        user's tenant
+      parameters:
+      - description: Public event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.eventResponse'
+        "401":
+          description: Authentication required
+          schema:
+            type: string
+        "404":
+          description: Event not found
+          schema:
+            type: string
+        "500":
+          description: Could not retrieve event
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get security event
+      tags:
+      - Events
+  /findings:
+    get:
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by severity
+        in: query
+        name: severity
+        type: string
+      - description: Filter by asset
+        in: query
+        name: asset_id
+        type: string
+      - description: Page size (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Return records with a smaller database ID
+        in: query
+        name: before_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.findingListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List findings
+      tags:
+      - Findings
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Finding data
+        in: body
+        name: finding
+        required: true
+        schema:
+          $ref: '#/definitions/api.findingCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.findingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a finding
+      tags:
+      - Findings
+  /findings/{finding_id}:
+    get:
+      parameters:
+      - description: Finding ID
+        in: path
+        name: finding_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.findingResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a finding
+      tags:
+      - Findings
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Finding ID
+        in: path
+        name: finding_id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: finding
+        required: true
+        schema:
+          $ref: '#/definitions/api.findingUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.findingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a finding
+      tags:
+      - Findings
   /incidents:
     get:
       description: Returns paginated incidents belonging to the authenticated tenant
@@ -468,6 +992,155 @@ paths:
       summary: Get incident
       tags:
       - Incidents
+  /remediation-tasks:
+    get:
+      description: Lists remediation tasks belonging to the authenticated user's organization.
+      parameters:
+      - description: Filter by finding ID
+        in: query
+        name: finding_id
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Maximum number of results (1-100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List remediation tasks
+      tags:
+      - Remediation
+    post:
+      consumes:
+      - application/json
+      description: Creates a remediation task linked to an existing finding.
+      parameters:
+      - description: Remediation task
+        in: body
+        name: remediation
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.remediationTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a remediation task
+      tags:
+      - Remediation
+  /remediation-tasks/{remediation_id}:
+    get:
+      parameters:
+      - description: Remediation ID
+        in: path
+        name: remediation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.remediationTaskResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a remediation task
+      tags:
+      - Remediation
+    patch:
+      consumes:
+      - application/json
+      description: Administrators can update all fields. Responders can update description
+        and status on tasks assigned to them.
+      parameters:
+      - description: Remediation ID
+        in: path
+        name: remediation_id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: remediation
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.remediationTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a remediation task
+      tags:
+      - Remediation
 securityDefinitions:
   BearerAuth:
     description: Tapez "Bearer " suivi de votre token JWT.

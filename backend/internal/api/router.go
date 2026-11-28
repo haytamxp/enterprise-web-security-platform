@@ -56,5 +56,38 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("GET /api/v1/remediation-tasks", AuthMiddleware(ListRemediationTasksHandler))
 	mux.HandleFunc("GET /api/v1/remediation-tasks/{remediation_id}", AuthMiddleware(GetRemediationTaskHandler))
 	mux.HandleFunc("PATCH /api/v1/remediation-tasks/{remediation_id}", AuthMiddleware(UpdateRemediationTaskHandler))
+	mux.HandleFunc("POST /api/v1/retests", AuthMiddleware(CreateRetestResultHandler))
+	mux.HandleFunc("GET /api/v1/retests", AuthMiddleware(ListRetestResultsHandler))
+	mux.HandleFunc("GET /api/v1/retests/{retest_id}", AuthMiddleware(GetRetestResultHandler))
+	mux.HandleFunc("GET /api/v1/findings/{finding_id}/retests", AuthMiddleware(ListFindingRetestResultsHandler))
+	// Response Orchestration: tenant-scoped, JWT-protected routes.
+	mux.HandleFunc("POST /api/v1/response/playbooks", AuthMiddleware(CreateResponsePlaybookHandler))
+	mux.HandleFunc("GET /api/v1/response/playbooks", AuthMiddleware(ListResponsePlaybooksHandler))
+	mux.HandleFunc("GET /api/v1/response/playbooks/{playbook_id}", AuthMiddleware(GetResponsePlaybookHandler))
+	mux.HandleFunc("PATCH /api/v1/response/playbooks/{playbook_id}", AuthMiddleware(UpdateResponsePlaybookHandler))
+
+	mux.HandleFunc("POST /api/v1/response/playbooks/{playbook_id}/actions", AuthMiddleware(CreateResponsePlaybookActionHandler))
+	mux.HandleFunc("GET /api/v1/response/playbooks/{playbook_id}/actions", AuthMiddleware(ListResponsePlaybookActionsHandler))
+	mux.HandleFunc("PATCH /api/v1/response/playbooks/{playbook_id}/actions/{response_action_id}", AuthMiddleware(UpdateResponsePlaybookActionHandler))
+
+	mux.HandleFunc("POST /api/v1/response/runs", AuthMiddleware(CreateResponseRunHandler))
+	mux.HandleFunc("GET /api/v1/response/runs", AuthMiddleware(ListResponseRunsHandler))
+	mux.HandleFunc("GET /api/v1/response/runs/{response_run_id}", AuthMiddleware(GetResponseRunHandler))
+	mux.HandleFunc("GET /api/v1/response/runs/{response_run_id}/actions", AuthMiddleware(ListResponseRunActionsHandler))
+	mux.HandleFunc("POST /api/v1/response/runs/{response_run_id}/start", AuthMiddleware(StartResponseRunHandler))
+	mux.HandleFunc("POST /api/v1/response/runs/{response_run_id}/cancel", AuthMiddleware(CancelResponseRunHandler))
+	mux.HandleFunc("PATCH /api/v1/response/runs/{response_run_id}/actions/{action_execution_id}", AuthMiddleware(UpdateResponseActionExecutionHandler))
+
+	mux.HandleFunc("GET /api/v1/response/approvals", AuthMiddleware(ListResponseApprovalsHandler))
+	mux.HandleFunc("GET /api/v1/response/approvals/{approval_id}", AuthMiddleware(GetResponseApprovalHandler))
+	mux.HandleFunc("POST /api/v1/response/approvals/{approval_id}/approve", AuthMiddleware(ApproveResponseApprovalHandler))
+	mux.HandleFunc("POST /api/v1/response/approvals/{approval_id}/reject", AuthMiddleware(RejectResponseApprovalHandler))
+	// Connector Management: administrator-only JWT routes.
+	mux.HandleFunc("POST /api/v1/connectors", AuthMiddleware(CreateConnectorHandler))
+	mux.HandleFunc("GET /api/v1/connectors", AuthMiddleware(ListConnectorsHandler))
+	mux.HandleFunc("GET /api/v1/connectors/{connector_id}", AuthMiddleware(GetConnectorHandler))
+	mux.HandleFunc("PATCH /api/v1/connectors/{connector_id}", AuthMiddleware(UpdateConnectorHandler))
+	mux.HandleFunc("POST /api/v1/connectors/{connector_id}/rotate-secret", AuthMiddleware(RotateConnectorSecretHandler))
+	mux.HandleFunc("POST /api/v1/connectors/{connector_id}/revoke", AuthMiddleware(RevokeConnectorHandler))
 	return CorsMiddleware(mux)
 }

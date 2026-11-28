@@ -75,6 +75,317 @@ definitions:
       updated_at:
         type: string
     type: object
+  api.ConnectorCreateRequest:
+    properties:
+      expires_at:
+        type: string
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  api.ConnectorResponse:
+    properties:
+      connector_id:
+        type: string
+      created_at:
+        type: string
+      credential:
+        type: string
+      expires_at:
+        type: string
+      is_active:
+        type: boolean
+      key_id:
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      revoked_at:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  api.ConnectorUpdateRequest:
+    properties:
+      expires_at:
+        type: string
+      name:
+        type: string
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  api.ResponseActionCreateRequest:
+    properties:
+      action_key:
+        type: string
+      action_type:
+        type: string
+      config:
+        additionalProperties: {}
+        type: object
+      is_enabled:
+        type: boolean
+      requires_approval:
+        type: boolean
+      response_action_id:
+        type: string
+      step_order:
+        type: integer
+    type: object
+  api.ResponseActionExecution:
+    properties:
+      action_execution_id:
+        type: string
+      action_type:
+        type: string
+      attempt_count:
+        type: integer
+      config_snapshot:
+        additionalProperties: {}
+        type: object
+      created_at:
+        type: string
+      error_code:
+        type: string
+      external_reference:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      playbook_id:
+        type: string
+      response_action_id:
+        type: string
+      response_run_id:
+        type: string
+      result_summary:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+      step_order:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  api.ResponseActionResultRequest:
+    properties:
+      error_code:
+        type: string
+      external_reference:
+        type: string
+      result_summary:
+        type: string
+      status:
+        type: string
+    type: object
+  api.ResponseActionUpdateRequest:
+    properties:
+      action_key:
+        type: string
+      action_type:
+        type: string
+      config:
+        additionalProperties: {}
+        type: object
+      is_enabled:
+        type: boolean
+      requires_approval:
+        type: boolean
+      step_order:
+        type: integer
+    type: object
+  api.ResponseApproval:
+    properties:
+      approval_id:
+        type: string
+      decided_at:
+        type: string
+      decided_by:
+        type: string
+      decision_note:
+        type: string
+      id:
+        type: integer
+      requested_at:
+        type: string
+      requested_by:
+        type: string
+      response_run_id:
+        type: string
+      status:
+        type: string
+    type: object
+  api.ResponseApprovalDecisionRequest:
+    properties:
+      decision_note:
+        type: string
+    type: object
+  api.ResponsePlaybook:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/api.ResponsePlaybookAction'
+        type: array
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      playbook_id:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  api.ResponsePlaybookAction:
+    properties:
+      action_key:
+        type: string
+      action_type:
+        type: string
+      config:
+        additionalProperties: {}
+        type: object
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_enabled:
+        type: boolean
+      playbook_id:
+        type: string
+      requires_approval:
+        type: boolean
+      response_action_id:
+        type: string
+      step_order:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  api.ResponsePlaybookCreateRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      playbook_id:
+        type: string
+    type: object
+  api.ResponsePlaybookUpdateRequest:
+    properties:
+      description:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  api.ResponseRun:
+    properties:
+      created_at:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      idempotency_key:
+        type: string
+      incident_id:
+        type: string
+      playbook_id:
+        type: string
+      request_reason:
+        type: string
+      requested_by:
+        type: string
+      requires_approval:
+        type: boolean
+      response_run_id:
+        type: string
+      started_at:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api.ResponseRunCreateRequest:
+    properties:
+      idempotency_key:
+        type: string
+      incident_id:
+        type: string
+      playbook_id:
+        type: string
+      request_reason:
+        type: string
+      requires_approval:
+        type: boolean
+      response_run_id:
+        type: string
+    type: object
+  api.RetestCreateRequest:
+    properties:
+      evidence_refs:
+        items: {}
+        type: array
+      finding_id:
+        type: string
+      remediation_id:
+        type: string
+      retest_id:
+        type: string
+      status:
+        type: string
+      summary:
+        type: string
+      tested_at:
+        type: string
+    type: object
+  api.RetestResultResponse:
+    properties:
+      created_at:
+        type: string
+      evidence_refs:
+        items: {}
+        type: array
+      finding_id:
+        type: string
+      id:
+        type: integer
+      performed_by:
+        type: string
+      remediation_id:
+        type: string
+      retest_id:
+        type: string
+      status:
+        type: string
+      summary:
+        type: string
+      tested_at:
+        type: string
+    type: object
   api.eventListResponse:
     properties:
       data:
@@ -343,6 +654,1091 @@ info:
   title: Orchid WebShield P3 API
   version: "1.0"
 paths:
+  /api/v1/connectors:
+    get:
+      description: Lists connectors for the administrator's tenant. Secrets and hashes
+        are never returned.
+      parameters:
+      - description: Filter by active state
+        in: query
+        name: is_active
+        type: boolean
+      - description: Maximum results (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List connectors
+      tags:
+      - Connectors
+    post:
+      consumes:
+      - application/json
+      description: Creates a tenant-scoped connector. The plaintext credential is
+        returned only once.
+      parameters:
+      - description: Connector configuration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ConnectorCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ConnectorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create connector
+      tags:
+      - Connectors
+  /api/v1/connectors/{connector_id}:
+    get:
+      parameters:
+      - description: Connector UUID
+        in: path
+        name: connector_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ConnectorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get connector
+      tags:
+      - Connectors
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Connector UUID
+        in: path
+        name: connector_id
+        required: true
+        type: string
+      - description: Connector changes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ConnectorUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ConnectorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update connector
+      tags:
+      - Connectors
+  /api/v1/connectors/{connector_id}/revoke:
+    post:
+      description: Disables a connector and records its revocation timestamp.
+      parameters:
+      - description: Connector UUID
+        in: path
+        name: connector_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ConnectorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Revoke connector
+      tags:
+      - Connectors
+  /api/v1/connectors/{connector_id}/rotate-secret:
+    post:
+      description: Replaces the connector key ID and secret. The new plaintext credential
+        is returned once.
+      parameters:
+      - description: Connector UUID
+        in: path
+        name: connector_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ConnectorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Rotate connector secret
+      tags:
+      - Connectors
+  /api/v1/findings/{finding_id}/retests:
+    get:
+      description: Lists the retest history for a finding belonging to the authenticated
+        tenant.
+      parameters:
+      - description: Finding ID
+        in: path
+        name: finding_id
+        required: true
+        type: string
+      - description: Filter by result status
+        in: query
+        name: status
+        type: string
+      - description: Maximum results (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List retests for a finding
+      tags:
+      - Retesting
+  /api/v1/response/approvals:
+    get:
+      parameters:
+      - description: pending, approved, or rejected
+        in: query
+        name: status
+        type: string
+      - description: Maximum results (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List response approvals
+      tags:
+      - Response Approvals
+  /api/v1/response/approvals/{approval_id}:
+    get:
+      parameters:
+      - description: Approval ID
+        in: path
+        name: approval_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseApproval'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get response approval
+      tags:
+      - Response Approvals
+  /api/v1/response/approvals/{approval_id}/approve:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Approval ID
+        in: path
+        name: approval_id
+        required: true
+        type: string
+      - description: Decision note
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/api.ResponseApprovalDecisionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseApproval'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Approve response run
+      tags:
+      - Response Approvals
+  /api/v1/response/approvals/{approval_id}/reject:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Approval ID
+        in: path
+        name: approval_id
+        required: true
+        type: string
+      - description: Decision note
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/api.ResponseApprovalDecisionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseApproval'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reject response run
+      tags:
+      - Response Approvals
+  /api/v1/response/playbooks:
+    get:
+      parameters:
+      - description: Filter by active state
+        in: query
+        name: is_active
+        type: boolean
+      - description: Maximum results (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List response playbooks
+      tags:
+      - Response Playbooks
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Playbook
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponsePlaybookCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ResponsePlaybook'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create response playbook
+      tags:
+      - Response Playbooks
+  /api/v1/response/playbooks/{playbook_id}:
+    get:
+      parameters:
+      - description: Playbook ID
+        in: path
+        name: playbook_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponsePlaybook'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get response playbook
+      tags:
+      - Response Playbooks
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Playbook ID
+        in: path
+        name: playbook_id
+        required: true
+        type: string
+      - description: Playbook changes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponsePlaybookUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponsePlaybook'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update response playbook
+      tags:
+      - Response Playbooks
+  /api/v1/response/playbooks/{playbook_id}/actions:
+    get:
+      parameters:
+      - description: Playbook ID
+        in: path
+        name: playbook_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List playbook actions
+      tags:
+      - Response Playbooks
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Playbook ID
+        in: path
+        name: playbook_id
+        required: true
+        type: string
+      - description: Action definition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponseActionCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ResponsePlaybookAction'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add playbook action
+      tags:
+      - Response Playbooks
+  /api/v1/response/playbooks/{playbook_id}/actions/{response_action_id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Playbook ID
+        in: path
+        name: playbook_id
+        required: true
+        type: string
+      - description: Response action ID
+        in: path
+        name: response_action_id
+        required: true
+        type: string
+      - description: Action changes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponseActionUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponsePlaybookAction'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update playbook action
+      tags:
+      - Response Playbooks
+  /api/v1/response/runs:
+    get:
+      parameters:
+      - description: Run status
+        in: query
+        name: status
+        type: string
+      - description: Incident ID
+        in: query
+        name: incident_id
+        type: string
+      - description: Maximum results (1-100)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List response runs
+      tags:
+      - Response Runs
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Response run request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponseRunCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseRun'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.ResponseRun'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create response run
+      tags:
+      - Response Runs
+  /api/v1/response/runs/{response_run_id}:
+    get:
+      parameters:
+      - description: Response run ID
+        in: path
+        name: response_run_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseRun'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get response run
+      tags:
+      - Response Runs
+  /api/v1/response/runs/{response_run_id}/actions:
+    get:
+      parameters:
+      - description: Response run ID
+        in: path
+        name: response_run_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List response run actions
+      tags:
+      - Response Runs
+  /api/v1/response/runs/{response_run_id}/actions/{action_execution_id}:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Response run ID
+        in: path
+        name: response_run_id
+        required: true
+        type: string
+      - description: Action execution ID
+        in: path
+        name: action_execution_id
+        required: true
+        type: string
+      - description: Execution result
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ResponseActionResultRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseActionExecution'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Record response action execution result
+      tags:
+      - Response Runs
+  /api/v1/response/runs/{response_run_id}/cancel:
+    post:
+      parameters:
+      - description: Response run ID
+        in: path
+        name: response_run_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseRun'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cancel response run
+      tags:
+      - Response Runs
+  /api/v1/response/runs/{response_run_id}/start:
+    post:
+      parameters:
+      - description: Response run ID
+        in: path
+        name: response_run_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseRun'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Start response run
+      tags:
+      - Response Runs
+  /api/v1/retests:
+    get:
+      description: Lists retest results belonging to the authenticated tenant. Supports
+        finding_id, remediation_id, and status filters.
+      parameters:
+      - description: Filter by finding ID
+        in: query
+        name: finding_id
+        type: string
+      - description: Filter by remediation ID
+        in: query
+        name: remediation_id
+        type: string
+      - description: Filter by result status
+        in: query
+        name: status
+        type: string
+      - description: Maximum results (1-100, default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List retest results
+      tags:
+      - Retesting
+    post:
+      consumes:
+      - application/json
+      description: Records whether a remediation was successful, unsuccessful, or
+        inconclusive. The tenant and performer are derived from the authenticated
+        identity.
+      parameters:
+      - description: Retest result
+        in: body
+        name: retest
+        required: true
+        schema:
+          $ref: '#/definitions/api.RetestCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.RetestResultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Record a retest result
+      tags:
+      - Retesting
+  /api/v1/retests/{retest_id}:
+    get:
+      description: Retrieves a retest result belonging to the authenticated tenant.
+      parameters:
+      - description: Retest ID
+        in: path
+        name: retest_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.RetestResultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a retest result
+      tags:
+      - Retesting
   /assets:
     get:
       description: Returns paginated assets belonging to the authenticated tenant
